@@ -15,6 +15,7 @@ const DB = {
 
 let currentUser = null;
 let currentFileId = null;
+const expandedMissions = new Set();
 
 /* ===== HELPERS ===== */
 const $ = s => document.querySelector(s);
@@ -325,6 +326,15 @@ function renderSections() {
     html += `</div>`;
   });
   container.innerHTML = html;
+
+  // Restore expanded state
+  expandedMissions.forEach(mid => {
+    const toggle = document.querySelector(`.subtask-toggle[data-toggle="${mid}"]`);
+    const subList = document.querySelector(`.subtasks-list[data-parent="${mid}"]`);
+    if (toggle) toggle.classList.add('open');
+    if (subList) subList.classList.add('open');
+  });
+
   bindMissionEvents();
 }
 
@@ -443,6 +453,11 @@ function bindMissionEvents() {
   document.querySelectorAll('[data-toggle]').forEach(btn => btn.addEventListener('click', e => {
     e.stopPropagation();
     const mid = btn.dataset.toggle;
+    if (expandedMissions.has(mid)) {
+      expandedMissions.delete(mid);
+    } else {
+      expandedMissions.add(mid);
+    }
     btn.classList.toggle('open');
     const subList = document.querySelector(`.subtasks-list[data-parent="${mid}"]`);
     if (subList) subList.classList.toggle('open');
