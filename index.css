@@ -7,6 +7,11 @@
   --bg-card-hover: #22223a;
   --bg-input: #16161f;
   --bg-section: #1e1e2e;
+  --bg-glass: rgba(26, 26, 36, 0.8);
+  --bg-header: rgba(15, 15, 19, 0.85);
+  --bg-icon-btn: rgba(255,255,255,0.06);
+  --bg-icon-btn-hover: rgba(255,255,255,0.12);
+  --bg-hover-subtle: rgba(255,255,255,0.03);
   --border: #2a2a3d;
   --border-focus: #6C5CE7;
   --text: #e8e8f0;
@@ -23,6 +28,32 @@
   --radius-xs: 6px;
   --shadow: 0 4px 24px rgba(0,0,0,0.3);
   --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== LIGHT THEME ===== */
+[data-theme="light"] {
+  --bg: #f4f5f7;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0edff;
+  --bg-input: #edeef2;
+  --bg-section: #f8f8fc;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --bg-header: rgba(244, 245, 247, 0.9);
+  --bg-icon-btn: rgba(0,0,0,0.05);
+  --bg-icon-btn-hover: rgba(0,0,0,0.1);
+  --bg-hover-subtle: rgba(0,0,0,0.03);
+  --border: #dddde5;
+  --border-focus: #6C5CE7;
+  --text: #1a1a2e;
+  --text-muted: #6b6b8a;
+  --text-dim: #9999b0;
+  --accent: #6C5CE7;
+  --accent-light: #8577f0;
+  --accent-glow: rgba(108, 92, 231, 0.15);
+  --danger: #e74c6c;
+  --danger-glow: rgba(231, 76, 108, 0.12);
+  --success: #27ae60;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
 }
 
 html { font-size: 15px; }
@@ -86,7 +117,7 @@ body {
 .auth-subtitle { color: var(--text-muted); margin-top: 0.4rem; font-size: 0.95rem; }
 
 .auth-form {
-  background: rgba(26, 26, 36, 0.8);
+  background: var(--bg-glass);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -193,7 +224,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0.8rem 2rem;
-  background: rgba(15, 15, 19, 0.85);
+  background: var(--bg-header);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -316,7 +347,7 @@ body {
   width: 30px;
   height: 30px;
   border-radius: var(--radius-xs);
-  background: rgba(255,255,255,0.06);
+  background: var(--bg-icon-btn);
   border: none;
   color: var(--text-muted);
   display: flex;
@@ -325,7 +356,7 @@ body {
   cursor: pointer;
   transition: var(--transition);
 }
-.icon-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+.icon-btn:hover { background: var(--bg-icon-btn-hover); color: var(--text); }
 .icon-btn.danger:hover { color: var(--danger); background: var(--danger-glow); }
 
 /* Trash Card */
@@ -421,7 +452,7 @@ body {
   gap: 0.6rem;
   min-height: 38px;
 }
-.mission-item:hover { background: rgba(255,255,255,0.03); }
+.mission-item:hover { background: var(--bg-hover-subtle); }
 
 .mission-check {
   width: 20px;
@@ -461,7 +492,7 @@ body {
   line-height: 1.4;
   min-height: 1.4em;
 }
-.mission-text:hover { background: rgba(255,255,255,0.04); }
+.mission-text:hover { background: var(--bg-hover-subtle); }
 
 .mission-text-input {
   flex: 1;
@@ -506,7 +537,7 @@ body {
   border-radius: 4px;
   padding: 0;
 }
-.subtask-toggle:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+.subtask-toggle:hover { color: var(--text); background: var(--bg-icon-btn); }
 .subtask-toggle svg { transition: transform 0.2s ease; }
 .subtask-toggle.open svg { transform: rotate(90deg); }
 
@@ -534,7 +565,7 @@ body {
   gap: 0.5rem;
   min-height: 32px;
 }
-.subtask-item:hover { background: rgba(255,255,255,0.03); }
+.subtask-item:hover { background: var(--bg-hover-subtle); }
 
 .subtask-check {
   width: 16px;
@@ -718,4 +749,34 @@ body {
   .home-main, .file-main { padding: 1rem; }
   .app-header { padding: 0.6rem 1rem; }
   .files-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ===== THEME TOGGLE BUTTON ===== */
+.theme-toggle {
+  padding: 0.45rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+.theme-icon {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.theme-toggle:hover .theme-icon {
+  transform: rotate(25deg);
+}
+
+/* Light theme auth floating shapes adjustment */
+[data-theme="light"] .floating-shapes .shape {
+  opacity: 0.2;
+  filter: blur(100px);
 }

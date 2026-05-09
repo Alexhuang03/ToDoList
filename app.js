@@ -498,3 +498,28 @@ function bindMissionEvents() {
     saveFile(f); renderSections();
   }));
 }
+
+/* ===== THEME TOGGLE (JOUR / NUIT) ===== */
+function applyTheme(theme) {
+  const root = document.documentElement;
+  const sunIcon = $('#theme-icon-sun');
+  const moonIcon = $('#theme-icon-moon');
+  if (theme === 'light') {
+    root.setAttribute('data-theme', 'light');
+    sunIcon.style.display = 'block';
+    moonIcon.style.display = 'none';
+  } else {
+    root.removeAttribute('data-theme');
+    sunIcon.style.display = 'none';
+    moonIcon.style.display = 'block';
+  }
+  localStorage.setItem('tdl_theme', theme);
+}
+
+// Restore saved theme on load
+applyTheme(localStorage.getItem('tdl_theme') || 'dark');
+
+$('#theme-toggle').addEventListener('click', () => {
+  const current = localStorage.getItem('tdl_theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
