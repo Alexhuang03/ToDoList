@@ -1,5 +1,8 @@
 /* ===== RESET & BASE ===== */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+  transition: background-color 0.7s ease, color 0.7s ease, border-color 0.7s ease, box-shadow 0.7s ease;
+}
 
 :root {
   --bg: #0f0f13;
