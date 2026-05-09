@@ -374,7 +374,10 @@ function bindMissionEvents() {
     input.type = 'text'; input.className = 'mission-text-input'; input.value = current;
     span.replaceWith(input);
     input.focus();
+    let saved = false;
     const save = () => {
+      if (saved) return;
+      saved = true;
       const val = input.value.trim();
       if (val && val !== current) {
         const f = getFile();
@@ -384,7 +387,7 @@ function bindMissionEvents() {
       renderSections();
     };
     input.addEventListener('blur', save);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderSections(); });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') { saved = true; renderSections(); } });
   }));
 
   // Delete mission
@@ -420,7 +423,10 @@ function bindMissionEvents() {
     input.style.marginLeft = '3.2rem'; input.style.marginTop = '0.3rem'; input.style.marginBottom = '0.3rem';
     missionEl.parentNode.insertBefore(input, missionEl.nextSibling);
     input.focus();
+    let saved = false;
     const doAdd = () => {
+      if (saved) return;
+      saved = true;
       const val = input.value.trim();
       if (val) {
         if (!mission.subtasks) mission.subtasks = [];
@@ -430,7 +436,7 @@ function bindMissionEvents() {
       renderSections();
     };
     input.addEventListener('blur', doAdd);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } if (e.key === 'Escape') renderSections(); });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } if (e.key === 'Escape') { saved = true; renderSections(); } });
   }));
 
   // Toggle subtasks
@@ -470,7 +476,10 @@ function bindMissionEvents() {
     input.type = 'text'; input.className = 'mission-text-input'; input.value = current; input.style.fontSize = '0.85rem';
     span.replaceWith(input);
     input.focus();
+    let saved = false;
     const save = () => {
+      if (saved) return;
+      saved = true;
       const val = input.value.trim();
       if (val && val !== current) {
         const f = getFile();
@@ -480,7 +489,7 @@ function bindMissionEvents() {
       renderSections();
     };
     input.addEventListener('blur', save);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderSections(); });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') { saved = true; renderSections(); } });
   }));
 
   // Delete subtask
