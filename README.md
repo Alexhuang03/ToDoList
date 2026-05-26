@@ -18,8 +18,15 @@ La plupart des outils de productivité sont trop complexes. **ToDoList** supprim
 
 1. Clonez ce dépôt : `git clone https://github.com/Alexhuang03/ToDoList.git`
 2. Ouvrez le dossier du projet : `cd ToDoList`
-3. [Ajoute ici tes commandes d'installation, par exemple : `npm install`]
-4. [Ajoute ici la commande pour lancer le projet, par exemple : `npm start`]
+3. Lancez le serveur local :
+
+```bash
+npm start        # serveur statique sur http://localhost:3000
+# ou
+npm run dev      # avec rechargement automatique (live-server)
+```
+
+> Aucune installation requise au préalable — `npx` télécharge automatiquement le serveur à la première utilisation. Node.js doit être installé sur la machine.
 
 ## Philosophie de Design
 

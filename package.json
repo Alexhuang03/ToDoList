@@ -1,0 +1,23 @@
+{
+  "name": "todolist",
+  "version": "1.0.0",
+  "description": "Un gestionnaire de tâches web minimaliste et collaboratif.",
+  "author": "Alexhuang03",
+  "license": "MIT",
+  "keywords": [
+    "todolist",
+    "task-manager",
+    "collaborative",
+    "vanilla-js"
+  ],
+  "homepage": "https://github.com/Alexhuang03/ToDoList",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Alexhuang03/ToDoList.git"
+  },
+  "scripts": {
+    "start": "npx serve . -l 3000",
+    "dev": "npx live-server --port=3000 --open=index.html"
+  },
+  "devDependencies": {}
+}
