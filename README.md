@@ -18,7 +18,10 @@ La plupart des outils de productivité sont trop complexes. **ToDoList** supprim
 
 1. Clonez ce dépôt : `git clone https://github.com/Alexhuang03/ToDoList.git`
 2. Ouvrez le dossier du projet : `cd ToDoList`
-3. Lancez le serveur local :
+3. faire un .env
+4. télécharger nodes.js `https://nodejs.org/en` si ce n'est pas encore fait 
+5. télécharger mongodb `https://www.mongodb.com/try/download/community` si ce n'est pas fait
+6. Lancez le serveur local :
 
 ```bash
 npm start        # serveur statique sur http://localhost:3000
