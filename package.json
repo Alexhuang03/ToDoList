@@ -13,11 +13,25 @@
   "homepage": "https://github.com/Alexhuang03/ToDoList",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Alexhuang03/ToDoList.git"
+    "url": "git+https://github.com/Alexhuang03/ToDoList.git"
   },
   "scripts": {
-    "start": "npx serve . -l 3000",
-    "dev": "npx live-server --port=3000 --open=index.html"
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
   },
-  "devDependencies": {}
+  "bugs": {
+    "url": "https://github.com/Alexhuang03/ToDoList/issues"
+  },
+  "main": "server/index.js",
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.6.2"
+  }
 }

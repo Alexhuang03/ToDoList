@@ -1,0 +1,12 @@
+# Dépendances
+node_modules/
+
+# Variables d'environnement (contient des secrets !)
+.env
+
+# Logs MongoDB
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
