@@ -337,14 +337,6 @@ body {
 }
 .file-card:hover .file-card-actions { opacity: 1; }
 
-.file-share-actions {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  opacity: 0;
-  transition: var(--transition);
-}
-.file-card:hover .file-share-actions { opacity: 1; }
 
 .icon-btn {
   width: 30px;
