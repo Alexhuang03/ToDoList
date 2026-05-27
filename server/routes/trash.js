@@ -50,12 +50,29 @@ router.post('/restore/:idx', authMiddleware, async (req, res) => {
     }
     // Si c'est une mission, on la remet dans le fichier
     if (item.type === 'mission' && item.fileId) {
-      const file = await File.findById(item.fileId);
+      const file = await File.findById(item.fileId.toString());
       if (file) {
         let sec = file.sections.find(s => s.name === item.sectionName);
-        if (!sec) { sec = { name: item.sectionName, missions: [] }; file.sections.push(sec); }
-        sec.missions.push(item.data);
+        if (!sec) {
+          file.sections.push({ name: item.sectionName, missions: [] });
+          sec = file.sections[file.sections.length - 1];
+        }
+        // Reconstruire explicitement l'objet mission pour satisfaire le schéma Mongoose
+        const d = item.data;
+        sec.missions.push({
+          id: d.id || String(Date.now()),
+          text: d.text || '',
+          done: d.done || false,
+          subtasks: (d.subtasks || []).map(st => ({
+            id: st.id || String(Date.now()),
+            text: st.text || '',
+            done: st.done || false,
+          })),
+        });
+        file.markModified('sections');
         await file.save();
+      } else {
+        console.warn('Fichier introuvable pour restauration mission, fileId:', item.fileId);
       }
     }
     res.json({ trash: trashDoc.items });
