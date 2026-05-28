@@ -386,7 +386,16 @@ function renderMission(m, secName) {
 /* ===== MISSION EVENTS ===== */
 function bindMissionEvents() {
   document.querySelectorAll('[data-check]').forEach(btn => btn.addEventListener('click', async () => {
-    currentFile.sections.forEach(s => { const m = s.missions.find(x => x.id === btn.dataset.check); if (m) m.done = !m.done; });
+    currentFile.sections.forEach(s => {
+      const m = s.missions.find(x => x.id === btn.dataset.check);
+      if (m) {
+        m.done = !m.done;
+        // Cascader l'état à toutes les sous-missions
+        if (m.subtasks && m.subtasks.length > 0) {
+          m.subtasks.forEach(st => st.done = m.done);
+        }
+      }
+    });
     await saveFile(); renderSections();
   }));
 
