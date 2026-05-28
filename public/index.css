@@ -423,7 +423,7 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .section-tag {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--accent-light);
   background: var(--accent-glow);
@@ -433,7 +433,7 @@ body {
   letter-spacing: 0.5px;
 }
 .section-count {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: var(--text-dim);
 }
 
@@ -479,7 +479,7 @@ body {
 
 .mission-text {
   flex: 1;
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   cursor: text;
   padding: 0.15rem 0.3rem;
   border-radius: 4px;
@@ -496,7 +496,7 @@ body {
   border-radius: 4px;
   color: var(--text);
   font-family: inherit;
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   padding: 0.2rem 0.4rem;
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-glow);
@@ -592,7 +592,7 @@ body {
 
 .subtask-text {
   flex: 1;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: text;
   padding: 0.1rem 0.2rem;
   border-radius: 4px;
@@ -612,38 +612,23 @@ body {
 .subtask-item:hover .subtask-actions { opacity: 1; }
 
 /* ===== DUE DATE ===== */
-.mission-date {
-  font-size: 0.72rem;
+.mission-date, .subtask-date {
+  font-size: 0.8rem;
   color: var(--text-dim);
   background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 0.1rem 0.45rem;
+  padding: 0.12rem 0.5rem;
   white-space: nowrap;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   transition: var(--transition);
 }
-.mission-date.overdue {
-  color: var(--danger);
-  border-color: var(--danger);
-  background: var(--danger-glow);
-}
-.subtask-date {
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.08rem 0.4rem;
-  white-space: nowrap;
-}
-.subtask-date.overdue {
-  color: var(--danger);
-  border-color: var(--danger);
-  background: var(--danger-glow);
-}
+.mission-date.ok, .subtask-date.ok { color: #27ae60; border-color: #27ae60; background: rgba(39,174,96,0.12); }
+.mission-date.warning, .subtask-date.warning { color: #e67e22; border-color: #e67e22; background: rgba(230,126,34,0.12); }
+.mission-date.urgent, .mission-date.overdue, .subtask-date.urgent, .subtask-date.overdue { color: var(--danger); border-color: var(--danger); background: var(--danger-glow); }
+.mission-date.done, .subtask-date.done { color: var(--text-dim); border-color: var(--border); text-decoration: line-through; }
 .dp-popup {
   position: absolute;
   z-index: 999;

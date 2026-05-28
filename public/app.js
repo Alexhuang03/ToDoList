@@ -30,9 +30,22 @@ function formatDate(d) {
   const date = new Date(d);
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
-function isOverdue(d, done) {
-  if (!d || done) return false;
-  return new Date(d) < new Date(new Date().toDateString());
+function dateBadgeEmoji(cls) {
+  if (cls === 'ok') return '😎';
+  if (cls === 'warning') return '🤔';
+  if (cls === 'urgent' || cls === 'overdue') return '🫪';
+  return '📅';
+}
+function dateBadgeClass(d, done) {
+  if (!d) return '';
+  if (done) return 'done';
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const deadline = new Date(d); deadline.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return 'overdue';
+  if (diff < 3) return 'urgent';
+  if (diff < 7) return 'warning';
+  return 'ok';
 }
 
 function toast(msg) {
@@ -369,7 +382,9 @@ function renderSections() {
 function renderMission(m, secName) {
   const hasSubtasks = m.subtasks && m.subtasks.length > 0;
   const arrow = hasSubtasks ? `<button class="subtask-toggle" data-toggle="${m.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>` : '';
-  const dateBadge = m.dueDate ? `<span class="mission-date${isOverdue(m.dueDate, m.done) ? ' overdue' : ''}">📅 ${formatDate(m.dueDate)}</span>` : '';
+  
+  const mClass = dateBadgeClass(m.dueDate, m.done);
+  const dateBadge = m.dueDate ? `<span class="mission-date ${mClass}">${dateBadgeEmoji(mClass)} ${formatDate(m.dueDate)}</span>` : '';
   const mDueDateStr = m.dueDate ? new Date(m.dueDate).toISOString().split('T')[0] : '';
 
   let sub = '';
@@ -377,7 +392,8 @@ function renderMission(m, secName) {
     const sortedSub = [...m.subtasks].sort((a, b) => a.done - b.done);
     sub = `<div class="subtasks-list" data-parent="${m.id}">`;
     sortedSub.forEach(st => {
-      const stDateBadge = st.dueDate ? `<span class="subtask-date${isOverdue(st.dueDate, st.done) ? ' overdue' : ''}">📅 ${formatDate(st.dueDate)}</span>` : '';
+      const stClass = dateBadgeClass(st.dueDate, st.done);
+      const stDateBadge = st.dueDate ? `<span class="subtask-date ${stClass}">${dateBadgeEmoji(stClass)} ${formatDate(st.dueDate)}</span>` : '';
       sub += `<div class="subtask-item${st.done ? ' completed' : ''}" data-stid="${st.id}">
         <button class="subtask-check${st.done ? ' checked' : ''}" data-stcheck="${st.id}" data-mid="${m.id}"></button>
         <span class="subtask-text" data-stedit="${st.id}" data-mid="${m.id}">${esc(st.text)}</span>
