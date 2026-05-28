@@ -398,7 +398,15 @@ function renderMission(m, secName) {
 
   let sub = '';
   if (hasSubtasks) {
-    const sortedSub = [...m.subtasks].sort((a, b) => a.done - b.done);
+    const sortedSub = [...m.subtasks].sort((a, b) => {
+      // Terminées en bas
+      if (a.done !== b.done) return a.done - b.done;
+      // Parmi les non-terminées : deadline la plus proche en premier
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    });
     sub = `<div class="subtasks-list" data-parent="${m.id}">`;
     sortedSub.forEach(st => {
       const stClass = dateBadgeClass(st.dueDate, st.done);
