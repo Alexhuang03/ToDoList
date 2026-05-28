@@ -25,6 +25,16 @@ const $ = s => document.querySelector(s);
 const uid = () => Math.random().toString(36).slice(2, 10);
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+function formatDate(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+function isOverdue(d, done) {
+  if (!d || done) return false;
+  return new Date(d) < new Date(new Date().toDateString());
+}
+
 function toast(msg) {
   const t = $('#toast');
   t.textContent = msg;
@@ -359,15 +369,25 @@ function renderSections() {
 function renderMission(m, secName) {
   const hasSubtasks = m.subtasks && m.subtasks.length > 0;
   const arrow = hasSubtasks ? `<button class="subtask-toggle" data-toggle="${m.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>` : '';
+  const dateVal = m.dueDate ? new Date(m.dueDate).toISOString().split('T')[0] : '';
+  const dateBadge = m.dueDate ? `<span class="mission-date${isOverdue(m.dueDate, m.done) ? ' overdue' : ''}">📅 ${formatDate(m.dueDate)}</span>` : '';
+
   let sub = '';
   if (hasSubtasks) {
     const sortedSub = [...m.subtasks].sort((a, b) => a.done - b.done);
     sub = `<div class="subtasks-list" data-parent="${m.id}">`;
     sortedSub.forEach(st => {
+      const stDateVal = st.dueDate ? new Date(st.dueDate).toISOString().split('T')[0] : '';
+      const stDateBadge = st.dueDate ? `<span class="subtask-date${isOverdue(st.dueDate, st.done) ? ' overdue' : ''}">📅 ${formatDate(st.dueDate)}</span>` : '';
       sub += `<div class="subtask-item${st.done ? ' completed' : ''}" data-stid="${st.id}">
         <button class="subtask-check${st.done ? ' checked' : ''}" data-stcheck="${st.id}" data-mid="${m.id}"></button>
         <span class="subtask-text" data-stedit="${st.id}" data-mid="${m.id}">${esc(st.text)}</span>
-        <div class="subtask-actions"><button class="icon-btn danger" data-stdel="${st.id}" data-mid="${m.id}" title="Supprimer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div>
+        ${stDateBadge}
+        <input type="date" class="date-input-hidden" data-stdateinput="${st.id}" data-mid="${m.id}" value="${stDateVal}">
+        <div class="subtask-actions">
+          <button class="icon-btn" data-stdatepick="${st.id}" data-mid="${m.id}" title="Date d'échéance"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+          <button class="icon-btn danger" data-stdel="${st.id}" data-mid="${m.id}" title="Supprimer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+        </div>
       </div>`;
     });
     sub += '</div>';
@@ -376,7 +396,10 @@ function renderMission(m, secName) {
     <button class="mission-check${m.done ? ' checked' : ''}" data-check="${m.id}"></button>
     ${arrow}
     <span class="mission-text" data-edit="${m.id}">${esc(m.text)}</span>
+    ${dateBadge}
+    <input type="date" class="date-input-hidden" data-dateinput="${m.id}" value="${dateVal}">
     <div class="mission-actions">
+      <button class="icon-btn" data-datepick="${m.id}" title="Date d'échéance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
       <button class="icon-btn" data-addsub="${m.id}" title="Ajouter sous-mission"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       <button class="icon-btn danger" data-del="${m.id}" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
     </div>
@@ -506,6 +529,42 @@ function bindMissionEvents() {
       if (m && m.subtasks) {
         m.subtasks = m.subtasks.filter(x => x.id !== stid);
         if (m.subtasks.length > 0 && m.subtasks.every(x => x.done)) m.done = true;
+      }
+    });
+    await saveFile(); renderSections();
+  }));
+
+  // Date picker — mission principale
+  document.querySelectorAll('[data-datepick]').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const input = document.querySelector(`[data-dateinput="${btn.dataset.datepick}"]`);
+    if (input) { try { input.showPicker(); } catch { input.click(); } }
+  }));
+
+  document.querySelectorAll('[data-dateinput]').forEach(input => input.addEventListener('change', async () => {
+    const mid = input.dataset.dateinput;
+    currentFile.sections.forEach(s => {
+      const m = s.missions.find(x => x.id === mid);
+      if (m) m.dueDate = input.value ? new Date(input.value) : null;
+    });
+    await saveFile(); renderSections();
+  }));
+
+  // Date picker — sous-mission
+  document.querySelectorAll('[data-stdatepick]').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const input = document.querySelector(`[data-stdateinput="${btn.dataset.stdatepick}"]`);
+    if (input) { try { input.showPicker(); } catch { input.click(); } }
+  }));
+
+  document.querySelectorAll('[data-stdateinput]').forEach(input => input.addEventListener('change', async () => {
+    const stid = input.dataset.stdateinput;
+    const mid = input.dataset.mid;
+    currentFile.sections.forEach(s => {
+      const m = s.missions.find(x => x.id === mid);
+      if (m && m.subtasks) {
+        const st = m.subtasks.find(x => x.id === stid);
+        if (st) st.dueDate = input.value ? new Date(input.value) : null;
       }
     });
     await saveFile(); renderSections();

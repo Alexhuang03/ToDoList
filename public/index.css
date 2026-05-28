@@ -611,6 +611,47 @@ body {
 }
 .subtask-item:hover .subtask-actions { opacity: 1; }
 
+/* ===== DUE DATE ===== */
+.mission-date {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1rem 0.45rem;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: var(--transition);
+}
+.mission-date.overdue {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-glow);
+}
+.subtask-date {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.08rem 0.4rem;
+  white-space: nowrap;
+}
+.subtask-date.overdue {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-glow);
+}
+.date-input-hidden {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
 /* ===== EMPTY STATE ===== */
 .empty-state {
   text-align: center;
