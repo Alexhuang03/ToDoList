@@ -644,13 +644,94 @@ body {
   border-color: var(--danger);
   background: var(--danger-glow);
 }
-.date-input-hidden {
+.dp-popup {
   position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  width: 0;
-  height: 0;
+  z-index: 999;
+  width: 240px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  padding: 0.75rem;
+  animation: fadeIn 0.15s ease;
 }
+.dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.dp-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.dp-nav {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-xs);
+  transition: var(--transition);
+  line-height: 1;
+}
+.dp-nav:hover { background: var(--bg-icon-btn-hover); color: var(--text); }
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 0.5rem;
+}
+.dp-label {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  padding: 0.2rem 0;
+  text-transform: uppercase;
+}
+.dp-day {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+.dp-day:hover:not(.disabled) { background: var(--bg-icon-btn-hover); color: var(--text); }
+.dp-day.today { color: var(--accent-light); font-weight: 700; }
+.dp-day.selected {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.dp-day.selected:hover { background: var(--accent-light); }
+.dp-day.disabled {
+  color: var(--text-dim);
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.dp-clear {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-family: inherit;
+  padding: 0.35rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.dp-clear:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-glow); }
 
 /* ===== EMPTY STATE ===== */
 .empty-state {

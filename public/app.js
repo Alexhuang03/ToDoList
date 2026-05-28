@@ -369,23 +369,21 @@ function renderSections() {
 function renderMission(m, secName) {
   const hasSubtasks = m.subtasks && m.subtasks.length > 0;
   const arrow = hasSubtasks ? `<button class="subtask-toggle" data-toggle="${m.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>` : '';
-  const dateVal = m.dueDate ? new Date(m.dueDate).toISOString().split('T')[0] : '';
   const dateBadge = m.dueDate ? `<span class="mission-date${isOverdue(m.dueDate, m.done) ? ' overdue' : ''}">📅 ${formatDate(m.dueDate)}</span>` : '';
+  const mDueDateStr = m.dueDate ? new Date(m.dueDate).toISOString().split('T')[0] : '';
 
   let sub = '';
   if (hasSubtasks) {
     const sortedSub = [...m.subtasks].sort((a, b) => a.done - b.done);
     sub = `<div class="subtasks-list" data-parent="${m.id}">`;
     sortedSub.forEach(st => {
-      const stDateVal = st.dueDate ? new Date(st.dueDate).toISOString().split('T')[0] : '';
       const stDateBadge = st.dueDate ? `<span class="subtask-date${isOverdue(st.dueDate, st.done) ? ' overdue' : ''}">📅 ${formatDate(st.dueDate)}</span>` : '';
       sub += `<div class="subtask-item${st.done ? ' completed' : ''}" data-stid="${st.id}">
         <button class="subtask-check${st.done ? ' checked' : ''}" data-stcheck="${st.id}" data-mid="${m.id}"></button>
         <span class="subtask-text" data-stedit="${st.id}" data-mid="${m.id}">${esc(st.text)}</span>
         ${stDateBadge}
-        <input type="date" class="date-input-hidden" data-stdateinput="${st.id}" data-mid="${m.id}" value="${stDateVal}">
         <div class="subtask-actions">
-          <button class="icon-btn" data-stdatepick="${st.id}" data-mid="${m.id}" title="Date d'échéance"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+          <button class="icon-btn" data-stdatepick="${st.id}" data-mid="${m.id}" data-maxdate="${mDueDateStr}" title="Date d'échéance"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
           <button class="icon-btn danger" data-stdel="${st.id}" data-mid="${m.id}" title="Supprimer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
         </div>
       </div>`;
@@ -397,7 +395,6 @@ function renderMission(m, secName) {
     ${arrow}
     <span class="mission-text" data-edit="${m.id}">${esc(m.text)}</span>
     ${dateBadge}
-    <input type="date" class="date-input-hidden" data-dateinput="${m.id}" value="${dateVal}">
     <div class="mission-actions">
       <button class="icon-btn" data-datepick="${m.id}" title="Date d'échéance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
       <button class="icon-btn" data-addsub="${m.id}" title="Ajouter sous-mission"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
@@ -537,38 +534,150 @@ function bindMissionEvents() {
   // Date picker — mission principale
   document.querySelectorAll('[data-datepick]').forEach(btn => btn.addEventListener('click', e => {
     e.stopPropagation();
-    const input = document.querySelector(`[data-dateinput="${btn.dataset.datepick}"]`);
-    if (input) { try { input.showPicker(); } catch { input.click(); } }
-  }));
-
-  document.querySelectorAll('[data-dateinput]').forEach(input => input.addEventListener('change', async () => {
-    const mid = input.dataset.dateinput;
-    currentFile.sections.forEach(s => {
-      const m = s.missions.find(x => x.id === mid);
-      if (m) m.dueDate = input.value ? new Date(input.value) : null;
-    });
-    await saveFile(); renderSections();
+    const mid = btn.dataset.datepick;
+    let currentVal = null;
+    currentFile.sections.forEach(s => { const m = s.missions.find(x => x.id === mid); if (m && m.dueDate) currentVal = m.dueDate; });
+    openDatePicker(btn, { type: 'mission', mid, currentVal, maxDate: null });
   }));
 
   // Date picker — sous-mission
   document.querySelectorAll('[data-stdatepick]').forEach(btn => btn.addEventListener('click', e => {
     e.stopPropagation();
-    const input = document.querySelector(`[data-stdateinput="${btn.dataset.stdatepick}"]`);
-    if (input) { try { input.showPicker(); } catch { input.click(); } }
+    const stid = btn.dataset.stdatepick;
+    const mid = btn.dataset.mid;
+    const maxDate = btn.dataset.maxdate || null;
+    let currentVal = null;
+    currentFile.sections.forEach(s => { const m = s.missions.find(x => x.id === mid); if (m && m.subtasks) { const st = m.subtasks.find(x => x.id === stid); if (st && st.dueDate) currentVal = st.dueDate; } });
+    openDatePicker(btn, { type: 'subtask', mid, stid, currentVal, maxDate });
   }));
+}
 
-  document.querySelectorAll('[data-stdateinput]').forEach(input => input.addEventListener('change', async () => {
-    const stid = input.dataset.stdateinput;
-    const mid = input.dataset.mid;
+/* ===== CUSTOM DATE PICKER ===== */
+let dpTarget = null;
+let dpViewMonth = null;
+
+function openDatePicker(anchorBtn, config) {
+  closeDatePicker();
+  dpTarget = config;
+  dpViewMonth = config.currentVal
+    ? new Date(new Date(config.currentVal).getFullYear(), new Date(config.currentVal).getMonth(), 1)
+    : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+  const popup = document.createElement('div');
+  popup.id = 'dp-popup';
+  popup.className = 'dp-popup';
+  document.body.appendChild(popup);
+  renderDPContent(popup, config.currentVal);
+
+  // Positionner sous le bouton
+  const rect = anchorBtn.getBoundingClientRect();
+  const popupW = 240;
+  let left = rect.left;
+  if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
+  popup.style.top = `${rect.bottom + window.scrollY + 6}px`;
+  popup.style.left = `${left}px`;
+
+  setTimeout(() => document.addEventListener('click', dpOutsideClick), 0);
+}
+
+function dpOutsideClick(e) {
+  const popup = document.getElementById('dp-popup');
+  if (popup && !popup.contains(e.target)) closeDatePicker();
+}
+
+function closeDatePicker() {
+  const popup = document.getElementById('dp-popup');
+  if (popup) popup.remove();
+  document.removeEventListener('click', dpOutsideClick);
+  dpTarget = null;
+}
+
+function renderDPContent(popup, selectedVal) {
+  const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const DAYS = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const year = dpViewMonth.getFullYear();
+  const month = dpViewMonth.getMonth();
+
+  const selectedDate = selectedVal ? new Date(selectedVal) : null;
+  if (selectedDate) selectedDate.setHours(0,0,0,0);
+
+  const maxDate = dpTarget && dpTarget.maxDate ? new Date(dpTarget.maxDate) : null;
+  if (maxDate) maxDate.setHours(0,0,0,0);
+
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+
+  let html = `
+    <div class="dp-header">
+      <button class="dp-nav" id="dp-prev">‹</button>
+      <span class="dp-title">${MONTHS[month]} ${year}</span>
+      <button class="dp-nav" id="dp-next">›</button>
+    </div>
+    <div class="dp-grid">
+      ${DAYS.map(d => `<span class="dp-label">${d}</span>`).join('')}
+      ${Array(firstDow).fill('<span></span>').join('')}
+  `;
+
+  for (let d = 1; d <= lastDay; d++) {
+    const date = new Date(year, month, d);
+    date.setHours(0,0,0,0);
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = date.getTime() === today.getTime();
+    const isSelected = selectedDate && date.getTime() === selectedDate.getTime();
+    const disabled = maxDate && date > maxDate;
+    let cls = 'dp-day';
+    if (isToday) cls += ' today';
+    if (isSelected) cls += ' selected';
+    if (disabled) cls += ' disabled';
+    html += `<button class="${cls}" ${disabled ? 'disabled' : ''} data-date="${dateStr}">${d}</button>`;
+  }
+
+  html += `</div><button class="dp-clear" id="dp-clear">✕ Effacer la date</button>`;
+  popup.innerHTML = html;
+
+  popup.querySelector('#dp-prev').addEventListener('click', e => {
+    e.stopPropagation();
+    dpViewMonth = new Date(year, month - 1, 1);
+    renderDPContent(popup, selectedVal);
+  });
+  popup.querySelector('#dp-next').addEventListener('click', e => {
+    e.stopPropagation();
+    dpViewMonth = new Date(year, month + 1, 1);
+    renderDPContent(popup, selectedVal);
+  });
+  popup.querySelectorAll('.dp-day:not(.disabled)').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      await applyDueDate(btn.dataset.date);
+      closeDatePicker();
+    });
+  });
+  popup.querySelector('#dp-clear').addEventListener('click', async e => {
+    e.stopPropagation();
+    await applyDueDate(null);
+    closeDatePicker();
+  });
+}
+
+async function applyDueDate(dateStr) {
+  if (!dpTarget) return;
+  const newDate = dateStr ? new Date(dateStr) : null;
+  if (dpTarget.type === 'mission') {
     currentFile.sections.forEach(s => {
-      const m = s.missions.find(x => x.id === mid);
+      const m = s.missions.find(x => x.id === dpTarget.mid);
+      if (m) m.dueDate = newDate;
+    });
+  } else {
+    currentFile.sections.forEach(s => {
+      const m = s.missions.find(x => x.id === dpTarget.mid);
       if (m && m.subtasks) {
-        const st = m.subtasks.find(x => x.id === stid);
-        if (st) st.dueDate = input.value ? new Date(input.value) : null;
+        const st = m.subtasks.find(x => x.id === dpTarget.stid);
+        if (st) st.dueDate = newDate;
       }
     });
-    await saveFile(); renderSections();
-  }));
+  }
+  await saveFile(); renderSections();
 }
 
 /* ===== THEME ===== */
