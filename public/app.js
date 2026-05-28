@@ -580,8 +580,22 @@ function bindMissionEvents() {
     e.stopPropagation();
     const mid = btn.dataset.datepick;
     let currentVal = null;
-    currentFile.sections.forEach(s => { const m = s.missions.find(x => x.id === mid); if (m && m.dueDate) currentVal = m.dueDate; });
-    openDatePicker(btn, { type: 'mission', mid, currentVal, maxDate: null });
+    let minDate = null;
+    currentFile.sections.forEach(s => {
+      const m = s.missions.find(x => x.id === mid);
+      if (m) {
+        if (m.dueDate) currentVal = m.dueDate;
+        // minDate = deadline la plus tardive des sous-missions
+        if (m.subtasks) {
+          m.subtasks.forEach(st => {
+            if (st.dueDate) {
+              if (!minDate || new Date(st.dueDate) > new Date(minDate)) minDate = st.dueDate;
+            }
+          });
+        }
+      }
+    });
+    openDatePicker(btn, { type: 'mission', mid, currentVal, maxDate: null, minDate });
   }));
 
   // Date picker — sous-mission
@@ -648,6 +662,8 @@ function renderDPContent(popup, selectedVal) {
 
   const maxDate = dpTarget && dpTarget.maxDate ? new Date(dpTarget.maxDate) : null;
   if (maxDate) maxDate.setHours(0,0,0,0);
+  const minDate = dpTarget && dpTarget.minDate ? new Date(dpTarget.minDate) : null;
+  if (minDate) minDate.setHours(0,0,0,0);
 
   const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
   const lastDay = new Date(year, month + 1, 0).getDate();
@@ -669,7 +685,7 @@ function renderDPContent(popup, selectedVal) {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = date.getTime() === today.getTime();
     const isSelected = selectedDate && date.getTime() === selectedDate.getTime();
-    const disabled = maxDate && date > maxDate;
+    const disabled = (maxDate && date > maxDate) || (minDate && date < minDate);
     let cls = 'dp-day';
     if (isToday) cls += ' today';
     if (isSelected) cls += ' selected';
