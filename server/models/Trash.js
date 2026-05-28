@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
 const trashItemSchema = new mongoose.Schema({
-  type: { type: String, enum: ['file', 'mission'], required: true },
+  type: { type: String, enum: ['file', 'mission', 'subtask'], required: true },
   data: { type: mongoose.Schema.Types.Mixed, required: true },
   fileId: { type: String },
   sectionName: { type: String },
+  parentMissionId: { type: String },
   origin: { type: String },
   deletedAt: { type: Date, default: Date.now },
 }, { _id: false });

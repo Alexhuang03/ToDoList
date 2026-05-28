@@ -63,16 +63,51 @@ router.post('/restore/:idx', authMiddleware, async (req, res) => {
           id: d.id || String(Date.now()),
           text: d.text || '',
           done: d.done || false,
+          dueDate: d.dueDate || null,
           subtasks: (d.subtasks || []).map(st => ({
             id: st.id || String(Date.now()),
             text: st.text || '',
             done: st.done || false,
+            dueDate: st.dueDate || null,
           })),
         });
         file.markModified('sections');
         await file.save();
       } else {
         console.warn('Fichier introuvable pour restauration mission, fileId:', item.fileId);
+      }
+    }
+    // Si c'est une sous-mission, on la remet dans la mission parente
+    if (item.type === 'subtask' && item.fileId && item.parentMissionId) {
+      const file = await File.findById(item.fileId.toString());
+      if (file) {
+        let parentMission = null;
+        file.sections.forEach(s => {
+          const m = s.missions.find(x => x.id === item.parentMissionId);
+          if (m) parentMission = m;
+        });
+        const st = item.data;
+        const subtaskObj = {
+          id: st.id || String(Date.now()),
+          text: st.text || '',
+          done: st.done || false,
+          dueDate: st.dueDate || null,
+        };
+        if (parentMission) {
+          parentMission.subtasks.push(subtaskObj);
+        } else {
+          // Mission parente supprimée : on crée une mission de substitution
+          let sec = file.sections.find(s => s.name === item.sectionName);
+          if (!sec) {
+            file.sections.push({ name: item.sectionName, missions: [] });
+            sec = file.sections[file.sections.length - 1];
+          }
+          sec.missions.push({ id: String(Date.now()), text: `[Restaurée] ${st.text}`, done: false, subtasks: [] });
+        }
+        file.markModified('sections');
+        await file.save();
+      } else {
+        console.warn('Fichier introuvable pour restauration sous-mission, fileId:', item.fileId);
       }
     }
     res.json({ trash: trashDoc.items });

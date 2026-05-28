@@ -275,8 +275,17 @@ async function renderTrash() {
     if (trash.length === 0) { container.innerHTML = ''; emptyEl.classList.remove('hidden'); return; }
     emptyEl.classList.add('hidden');
     container.innerHTML = trash.map((item, i) => {
-      const label = item.type === 'file' ? `📁 ${esc(item.data.name)}` : `✓ ${esc(item.data.text)}`;
-      const origin = item.type === 'file' ? 'Fichier supprimé' : `De : ${esc(item.origin || '')}`;
+      let label, origin;
+      if (item.type === 'file') {
+        label = `📁 ${esc(item.data.name)}`;
+        origin = 'Fichier supprimé';
+      } else if (item.type === 'subtask') {
+        label = `↳ ${esc(item.data.text)}`;
+        origin = `Sous-mission de : ${esc(item.origin || '')}`;
+      } else {
+        label = `✓ ${esc(item.data.text)}`;
+        origin = `De : ${esc(item.origin || '')}`;
+      }
       return `<div class="trash-item"><div class="trash-item-info"><span class="trash-item-name">${label}</span><span class="trash-item-origin">${origin}</span></div><button class="btn-restore" data-restore="${i}">Restaurer</button></div>`;
     }).join('');
     container.querySelectorAll('[data-restore]').forEach(btn => {
@@ -540,8 +549,19 @@ function bindMissionEvents() {
     currentFile.sections.forEach(s => {
       const m = s.missions.find(x => x.id === mid);
       if (m && m.subtasks) {
-        m.subtasks = m.subtasks.filter(x => x.id !== stid);
-        if (m.subtasks.length > 0 && m.subtasks.every(x => x.done)) m.done = true;
+        const idx = m.subtasks.findIndex(x => x.id === stid);
+        if (idx !== -1) {
+          const removed = m.subtasks.splice(idx, 1)[0];
+          API.post('/trash', {
+            type: 'subtask',
+            data: removed,
+            fileId: currentFile._id,
+            sectionName: s.name,
+            parentMissionId: mid,
+            origin: currentFile.name + ' / ' + s.name + ' / ' + m.text
+          });
+          if (m.subtasks.length > 0 && m.subtasks.every(x => x.done)) m.done = true;
+        }
       }
     });
     await saveFile(); renderSections();
