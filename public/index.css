@@ -221,6 +221,28 @@ body {
   min-height: 1.2em;
 }
 
+.auth-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+}
+.auth-switch-row .auth-switch { margin-top: 0; }
+.auth-forgot {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: var(--transition);
+}
+.auth-forgot:hover { color: var(--accent-light); }
+
+.auth-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
 /* ===== APP HEADER ===== */
 .app-header {
   display: flex;

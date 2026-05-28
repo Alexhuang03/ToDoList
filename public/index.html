@@ -43,7 +43,10 @@
           <input type="password" id="login-password" placeholder="••••••••" required>
         </div>
         <button type="submit" class="btn-primary" id="login-btn">Se connecter</button>
-        <p class="auth-switch">Pas encore de compte ? <a href="#" id="show-register">Créer un compte</a></p>
+        <div class="auth-switch-row">
+          <p class="auth-switch">Pas encore de compte ? <a href="#" id="show-register">Créer un compte</a></p>
+          <a href="#" id="show-forgot" class="auth-forgot">Mot de passe oublié ?</a>
+        </div>
         <p id="login-error" class="auth-error"></p>
       </form>
 
@@ -65,6 +68,35 @@
         <button type="submit" class="btn-primary" id="register-btn">Créer mon compte</button>
         <p class="auth-switch">Déjà un compte ? <a href="#" id="show-login">Se connecter</a></p>
         <p id="register-error" class="auth-error"></p>
+      </form>
+
+      <!-- FORGOT PASSWORD FORM -->
+      <form id="forgot-form" class="auth-form hidden" autocomplete="off">
+        <h2>Mot de passe oublié</h2>
+        <p class="auth-desc">Entrez votre adresse e-mail. Vous recevrez un lien pour réinitialiser votre mot de passe.</p>
+        <div class="input-group">
+          <label for="forgot-email">Adresse e-mail</label>
+          <input type="email" id="forgot-email" placeholder="vous@exemple.com" required>
+        </div>
+        <button type="submit" class="btn-primary" id="forgot-btn">Envoyer le lien</button>
+        <p class="auth-switch"><a href="#" id="forgot-back">← Retour à la connexion</a></p>
+        <p id="forgot-msg" class="auth-error"></p>
+      </form>
+
+      <!-- RESET PASSWORD FORM -->
+      <form id="reset-form" class="auth-form hidden" autocomplete="off">
+        <h2>Nouveau mot de passe</h2>
+        <p class="auth-desc">Choisissez un nouveau mot de passe pour votre compte.</p>
+        <div class="input-group">
+          <label for="reset-password">Nouveau mot de passe</label>
+          <input type="password" id="reset-password" placeholder="Minimum 6 caractères" required minlength="6">
+        </div>
+        <div class="input-group">
+          <label for="reset-confirm">Confirmer le mot de passe</label>
+          <input type="password" id="reset-confirm" placeholder="Répétez le mot de passe" required minlength="6">
+        </div>
+        <button type="submit" class="btn-primary" id="reset-btn">Réinitialiser le mot de passe</button>
+        <p id="reset-msg" class="auth-error"></p>
       </form>
     </div>
     <div class="auth-visual">

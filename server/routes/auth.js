@@ -72,4 +72,83 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'E-mail requis' });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Toujours répondre OK pour ne pas révéler si l'email existe
+    if (!user) return res.json({ message: 'Si cet e-mail existe, un lien a été envoyé.' });
+
+    const crypto = require('crypto');
+    const nodemailer = require('nodemailer');
+
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetToken = token;
+    user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
+    await user.save();
+
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const resetLink = `${appUrl}/?reset_token=${token}`;
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"ToDoList" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: '🔑 Réinitialisation de votre mot de passe',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:2rem;background:#f9f9f9;border-radius:12px;">
+          <h2 style="color:#6C5CE7;">Réinitialisation du mot de passe</h2>
+          <p>Bonjour <strong>${user.name}</strong>,</p>
+          <p>Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous :</p>
+          <a href="${resetLink}" style="display:inline-block;margin:1.5rem 0;padding:0.8rem 1.8rem;background:#6C5CE7;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
+            Réinitialiser mon mot de passe
+          </a>
+          <p style="color:#888;font-size:0.85rem;">Ce lien expire dans <strong>1 heure</strong>. Si vous n'avez pas fait cette demande, ignorez cet e-mail.</p>
+        </div>
+      `,
+    });
+
+    console.log(`📧 Email de reset envoyé à ${user.email}`);
+    res.json({ message: 'Un e-mail de réinitialisation a été envoyé.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'e-mail. Vérifiez la configuration SMTP.' });
+  }
+});
+
+// POST /api/auth/reset-password/:token
+router.post('/reset-password/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Mot de passe trop court (6 caractères minimum)' });
+    }
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: new Date() },
+    });
+    if (!user) {
+      return res.status(400).json({ error: 'Lien invalide ou expiré. Recommencez la procédure.' });
+    }
+    user.passwordHash = password; // le pre-save hook va le hacher
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await user.save();
+    res.json({ message: 'Mot de passe réinitialisé avec succès.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 module.exports = { router, authMiddleware };

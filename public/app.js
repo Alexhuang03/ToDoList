@@ -69,7 +69,9 @@ function setLoading(btnId, loading) {
 
 /* ===== AUTH ===== */
 $('#show-register').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.remove('hidden'); });
-$('#show-login').addEventListener('click', e => { e.preventDefault(); $('#register-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
+$('#show-login').addEventListener('click', e => { e.preventDefault(); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
+$('#show-forgot').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.remove('hidden'); $('#forgot-email').focus(); });
+$('#forgot-back').addEventListener('click', e => { e.preventDefault(); $('#forgot-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
 
 $('#register-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -122,8 +124,65 @@ function enterApp() {
   showScreen('home-screen');
 }
 
+/* ===== FORGOT PASSWORD ===== */
+$('#forgot-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('#forgot-email').value.trim();
+  const msgEl = $('#forgot-msg');
+  msgEl.textContent = '';
+  msgEl.style.color = '';
+  setLoading('forgot-btn', true);
+  try {
+    const data = await API.post('/auth/forgot-password', { email });
+    msgEl.style.color = 'var(--accent-light)';
+    msgEl.textContent = '✓ ' + data.message + ' Vérifiez votre boîte mail (et les spams).';
+    $('#forgot-email').value = '';
+  } catch (err) {
+    msgEl.textContent = err.message;
+  } finally {
+    setLoading('forgot-btn', false);
+  }
+});
+
+$('#reset-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const password = $('#reset-password').value;
+  const confirm = $('#reset-confirm').value;
+  const msgEl = $('#reset-msg');
+  msgEl.textContent = '';
+  msgEl.style.color = '';
+  if (password !== confirm) { msgEl.textContent = 'Les mots de passe ne correspondent pas.'; return; }
+  const token = new URLSearchParams(window.location.search).get('reset_token');
+  if (!token) { msgEl.textContent = 'Token manquant. Recommencez la procédure.'; return; }
+  setLoading('reset-btn', true);
+  try {
+    const data = await API.post(`/auth/reset-password/${token}`, { password });
+    msgEl.style.color = 'var(--accent-light)';
+    msgEl.textContent = '✓ ' + data.message;
+    // Effacer le token de l’URL et rediriger vers login après 2s
+    setTimeout(() => {
+      window.history.replaceState({}, '', '/');
+      $('#reset-form').classList.add('hidden');
+      $('#login-form').classList.remove('hidden');
+      $('#reset-password').value = ''; $('#reset-confirm').value = '';
+    }, 2000);
+  } catch (err) {
+    msgEl.textContent = err.message;
+  } finally {
+    setLoading('reset-btn', false);
+  }
+});
+
 /* ===== AUTO-LOGIN ===== */
 (async function init() {
+  // Détection du token de réinitialisation dans l'URL
+  const resetToken = new URLSearchParams(window.location.search).get('reset_token');
+  if (resetToken) {
+    showScreen('auth-screen');
+    $('#login-form').classList.add('hidden');
+    $('#reset-form').classList.remove('hidden');
+    return;
+  }
   if (!API.token()) { showScreen('auth-screen'); return; }
   try {
     const data = await API.get('/auth/me');
