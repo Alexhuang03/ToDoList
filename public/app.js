@@ -212,6 +212,7 @@ async function renderHome() {
       const collab = f.sharedWith && f.sharedWith.length > 0 ? `👥 ${f.sharedWith.length + 1}` : '';
       html += `<div class="file-card" data-id="${f._id}">
         <div class="file-card-actions">
+          ${isOwner ? `<button class="icon-btn" data-edit="${f._id}" title="Modifier"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>` : ''}
           ${isOwner ? `<button class="icon-btn" data-share="${f._id}" title="Partager"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>` : ''}
           ${isOwner ? `<button class="icon-btn danger" data-delete="${f._id}" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>` : ''}
         </div>
@@ -222,6 +223,7 @@ async function renderHome() {
     grid.innerHTML = html;
     grid.querySelectorAll('.file-card').forEach(card => {
       card.addEventListener('click', e => {
+        if (e.target.closest('[data-edit]')) { openEditModal(e.target.closest('[data-edit]').dataset.edit, files); return; }
         if (e.target.closest('[data-share]')) { openShareModal(e.target.closest('[data-share]').dataset.share, files); return; }
         if (e.target.closest('[data-delete]')) { deleteFile(e.target.closest('[data-delete]').dataset.delete); return; }
         if (card.dataset.action === 'trash') { openTrash(); return; }
@@ -272,6 +274,46 @@ $('#modal-confirm').addEventListener('click', async () => {
   } catch (err) { toast(err.message); }
 });
 $('#new-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#modal-confirm').click(); } });
+
+/* ===== EDIT FILE MODAL ===== */
+let editFileId = null;
+
+function openEditModal(fid, files) {
+  const f = files.find(x => x._id === fid);
+  if (!f) return;
+  editFileId = fid;
+  $('#edit-file-name').value = f.name;
+  // Pre-select current emoji
+  document.querySelectorAll('.edit-emoji-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.emoji === (f.emoji || ''));
+  });
+  $('#edit-modal-overlay').classList.add('active');
+  setTimeout(() => $('#edit-file-name').focus(), 100);
+}
+
+document.querySelectorAll('.edit-emoji-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.edit-emoji-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+
+$('#edit-modal-cancel').addEventListener('click', () => $('#edit-modal-overlay').classList.remove('active'));
+$('#edit-modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) $('#edit-modal-overlay').classList.remove('active'); });
+
+$('#edit-modal-confirm').addEventListener('click', async () => {
+  const name = $('#edit-file-name').value.trim();
+  if (!name || !editFileId) return;
+  const sel = document.querySelector('.edit-emoji-opt.selected');
+  const emoji = sel ? sel.dataset.emoji : '';
+  try {
+    await API.put(`/files/${editFileId}`, { name, emoji });
+    $('#edit-modal-overlay').classList.remove('active');
+    toast('Fichier modifié !');
+    renderHome();
+  } catch (err) { toast(err.message); }
+});
+$('#edit-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#edit-modal-confirm').click(); } });
 
 /* ===== DELETE FILE ===== */
 async function deleteFile(id) {
@@ -386,6 +428,50 @@ function openFile(f) {
   setTimeout(() => $('#quick-entry').focus(), 100);
   startPolling();
 }
+
+function startTitleEdit() {
+  const wrapper = $('#file-title-wrapper');
+  if (!wrapper || !currentFile) return;
+  // Already editing?
+  if (wrapper.querySelector('.file-title-input')) return;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentFile.name;
+  input.className = 'file-title-input';
+  wrapper.innerHTML = '';
+  wrapper.appendChild(input);
+  input.focus();
+  input.select();
+
+  async function saveTitle() {
+    const newName = input.value.trim();
+    if (newName && newName !== currentFile.name) {
+      try {
+        const { file } = await API.put(`/files/${currentFile._id}`, { name: newName });
+        currentFile = file;
+        toast('Titre modifié !');
+      } catch (err) { toast(err.message); }
+    }
+    wrapper.innerHTML = '';
+    const h2 = document.createElement('h2');
+    h2.id = 'file-title';
+    h2.className = 'file-title-header';
+    h2.title = 'Cliquer pour renommer';
+    h2.textContent = (currentFile.emoji ? currentFile.emoji + ' ' : '') + currentFile.name;
+    wrapper.appendChild(h2);
+  }
+  input.addEventListener('blur', saveTitle);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = currentFile.name; input.blur(); }
+  });
+}
+
+// Delegation : clic sur le wrapper du titre (fonctionne même après innerHTML reset)
+$('#file-title-wrapper').addEventListener('click', e => {
+  if (e.target.classList.contains('file-title-header')) startTitleEdit();
+});
+
 
 $('#back-btn').addEventListener('click', () => {
   stopPolling();

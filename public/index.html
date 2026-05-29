@@ -177,7 +177,9 @@
             <polyline points="12 19 5 12 12 5"/>
           </svg>
         </button>
-        <h2 id="file-title" class="file-title-header"></h2>
+        <div class="file-title-wrapper" id="file-title-wrapper">
+          <h2 id="file-title" class="file-title-header" title="Cliquer pour renommer"></h2>
+        </div>
       </div>
       <div class="header-right">
         <div id="progress-container" class="progress-container">
@@ -278,6 +280,46 @@
       <div class="modal-actions">
         <button class="btn-ghost" id="modal-cancel">Annuler</button>
         <button class="btn-primary" id="modal-confirm">Créer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit File Modal -->
+  <div id="edit-modal-overlay" class="modal-overlay">
+    <div class="modal" id="edit-file-modal">
+      <h3>Modifier le fichier</h3>
+      <div class="input-group">
+        <label for="edit-file-name">Nom du fichier</label>
+        <input type="text" id="edit-file-name" placeholder="Mon projet...">
+      </div>
+      <div class="input-group">
+        <label>Icône</label>
+        <div class="emoji-picker" id="edit-emoji-picker">
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="">—</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="📁">📁</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="📝">📝</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🚀">🚀</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="💡">💡</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🎯">🎯</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="📚">📚</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="💼">💼</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🏠">🏠</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🎨">🎨</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🏋️">🏋️</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🎮">🎮</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🌍">🌍</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🔬">🔬</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="💰">💰</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="❤️">❤️</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="⭐">⭐</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🔥">🔥</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="✅">✅</button>
+          <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="🎵">🎵</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="edit-modal-cancel">Annuler</button>
+        <button class="btn-primary" id="edit-modal-confirm">Enregistrer</button>
       </div>
     </div>
   </div>
