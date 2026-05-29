@@ -1,6 +1,6 @@
 # ToDoList
 
-> Un gestionnaire de tâches web ultra-minimaliste, pensé pour la rapidité de saisie et la collaboration sans friction.
+> Un gestionnaire de tâches web collaboratif — saisie ultra-rapide, organisation par sections, sous-missions, deadlines colorées et partage d'équipe sans friction.
 
 ## Le Concept
 
@@ -8,34 +8,101 @@ La plupart des outils de productivité sont trop complexes. **ToDoList** supprim
 
 ## Fonctionnalités Principales
 
-* **Saisie Éclair (Quick Entry) :** Tapez simplement votre tâche et ajoutez `#nomdelasection` à la fin. L'application crée la section à la volée et y range votre mission automatiquement.
-* **Interface Minimaliste :** Les actions avancées (ajouter des sous-missions, supprimer) n'apparaissent qu'au survol de la souris pour garder une interface visuellement apaisante.
-* **Validation Automatique :** Cochez toutes vos sous-missions, et la mission principale se valide et s'archive automatiquement.
-* **Mode Collaboratif :** Vos espaces sont privés par défaut, mais vous pouvez inviter des collaborateurs sur un fichier (`@`) via leur adresse e-mail en un seul clic.
-* **Corbeille Sécurisée :** Une suppression accidentelle ? Retrouvez toutes vos tâches et fichiers dans la corbeille globale.
+* **Saisie Éclair (Quick Entry) :** Tapez votre tâche et ajoutez `#nomdelasection` à la fin — la section est créée à la volée automatiquement.
+* **Sous-missions :** Chaque mission peut contenir des sous-tâches, avec cochage en cascade (cocher la principale coche toutes les sous-missions).
+* **Deadlines colorées :** Assignez une date d'échéance à chaque mission ou sous-mission. L'encadrement change de couleur selon l'urgence (😎 vert > 7j, 🤔 orange < 7j, 🫪 rouge < 3j).
+* **Tri automatique :** Les sous-missions sont triées par urgence de deadline, les tâches terminées descendent en bas de liste.
+* **Interface Minimaliste :** Les actions avancées (sous-missions, calendrier, suppression) n'apparaissent qu'au survol pour garder l'interface visuellement apaisante.
+* **Mode Collaboratif :** Partagez vos fichiers avec des collaborateurs via leur adresse e-mail en un seul clic.
+* **Corbeille Sécurisée :** Missions et sous-missions supprimées sont restaurables depuis la corbeille globale.
+* **Réinitialisation de mot de passe :** Les utilisateurs peuvent recevoir un lien de réinitialisation par e-mail.
+* **Thème clair / sombre :** Basculez entre les deux modes depuis l'en-tête.
 
-## Installation & Utilisation
+## Prérequis
 
-1. Clonez ce dépôt : `git clone https://github.com/Alexhuang03/ToDoList.git`
-2. Ouvrez le dossier du projet : `cd ToDoList`
-3. Faire un .env
-   1. Exemple
+Avant d'installer le projet, assurez-vous d'avoir :
 
-      `MONGO_URI=mongodb://localhost:27017/todolist `
-      `JWT_SECRET=ta_cle_secrete_ici `
-      `PORT=3000`
-4. Télécharger nodes.js `https://nodejs.org/en` si ce n'est pas encore fait
-5. Télécharger mongodb `https://www.mongodb.com/try/download/community` si ce n'est pas fait
-6. Lancez le serveur local :
+| Outil | Version recommandée | Lien |
+|---|---|---|
+| **Node.js** | v18+ | https://nodejs.org/en |
+| **MongoDB** | v6+ (Community) | https://www.mongodb.com/try/download/community |
+| **npm** | inclus avec Node.js | — |
+
+> MongoDB doit être démarré localement avant de lancer le serveur.
+
+## Installation & Configuration
+
+### 1. Cloner le dépôt
 
 ```bash
-npm start        # serveur statique sur http://localhost:3000
-# ou
-npm run dev      # avec rechargement automatique (live-server)
+git clone https://github.com/Alexhuang03/ToDoList.git
+cd ToDoList
 ```
 
-> Aucune installation requise au préalable — `npx` télécharge automatiquement le serveur à la première utilisation. Node.js doit être installé sur la machine.
+### 2. Installer les dépendances
+
+```bash
+npm install
+```
+
+Les packages principaux installés sont :
+
+| Package | Rôle |
+|---|---|
+| `express` | Serveur HTTP |
+| `mongoose` | Connexion & modèles MongoDB |
+| `bcryptjs` | Hachage des mots de passe |
+| `jsonwebtoken` | Authentification JWT |
+| `nodemailer` | Envoi d'e-mails (réinitialisation de mot de passe) |
+| `dotenv` | Chargement des variables d'environnement |
+| `cors` | Autorisations cross-origin |
+| `nodemon` | Rechargement automatique en développement |
+
+### 3. Créer le fichier `.env`
+
+Créez un fichier `.env` à la racine du projet avec le contenu suivant :
+
+```env
+MONGO_URI=mongodb://localhost:27017/todolist
+JWT_SECRET=ta_cle_secrete_ici
+PORT=3000
+
+# Email (pour la réinitialisation de mot de passe)
+SMTP_USER=ton_adresse@gmail.com
+SMTP_PASS=mot_de_passe_application_gmail
+APP_URL=http://localhost:3000
+```
+
+> **Note SMTP :** `SMTP_PASS` doit être un **mot de passe d'application** Google (et non votre mot de passe Gmail habituel).
+> Pour le créer : Google Account → Sécurité → Validation en 2 étapes → Mots de passe des applications.
+
+### 4. Lancer le serveur
+
+```bash
+npm start        # serveur de production sur http://localhost:3000
+# ou
+npm run dev      # avec rechargement automatique via nodemon (recommandé en développement)
+```
+
+L'application est accessible sur **http://localhost:3000**.
+
+## Architecture
+
+```
+ToDoList/
+├── public/          # Frontend (HTML, CSS, JS vanilla)
+│   ├── index.html
+│   ├── index.css
+│   └── app.js
+├── server/          # Backend Express
+│   ├── index.js     # Point d'entrée serveur
+│   ├── db.js        # Connexion MongoDB
+│   ├── models/      # Schémas Mongoose (User, File, Trash)
+│   └── routes/      # Routes API (auth, files, trash)
+├── .env             # Variables d'environnement (non committé)
+└── package.json
+```
 
 ## Philosophie de Design
 
-Le design de ToDoList repose sur le "Progressive Disclosure" (divulgation progressive). Les tâches accomplies deviennent grisées, en italique et descendent automatiquement en bas de liste pour libérer votre charge mentale. L'édition de texte se fait en cliquant directement sur la tâche (Inline Editing), sans aucune icône superflue.
+Le design de ToDoList repose sur le **Progressive Disclosure** (divulgation progressive). Les tâches accomplies deviennent grisées, en italique et descendent automatiquement en bas de liste pour libérer votre charge mentale. L'édition de texte se fait en cliquant directement sur la tâche (Inline Editing), sans aucune icône superflue.
