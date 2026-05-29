@@ -215,7 +215,7 @@ async function renderHome() {
           ${isOwner ? `<button class="icon-btn" data-share="${f._id}" title="Partager"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>` : ''}
           ${isOwner ? `<button class="icon-btn danger" data-delete="${f._id}" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>` : ''}
         </div>
-        <div class="file-card-name">${esc(f.name)}${collab ? ` <span style="font-size:0.75rem;opacity:0.7;">${collab}</span>` : ''}</div>
+        <div class="file-card-name">${f.emoji ? f.emoji + ' ' : ''}${esc(f.name)}${collab ? ` <span style="font-size:0.75rem;opacity:0.7;">${collab}</span>` : ''}</div>
         <div class="file-card-meta">${total} mission(s) · ${done} terminée(s)</div>
       </div>`;
     });
@@ -240,15 +240,32 @@ function countTasks(f) { return (f.sections || []).reduce((s, sec) => s + sec.mi
 function countDone(f) { return (f.sections || []).reduce((s, sec) => s + sec.missions.filter(m => m.done).length, 0); }
 
 /* ===== NEW FILE MODAL ===== */
-$('#add-file-btn').addEventListener('click', () => { $('#modal-overlay').classList.add('active'); $('#new-file-name').value = ''; setTimeout(() => $('#new-file-name').focus(), 100); });
+$('#add-file-btn').addEventListener('click', () => {
+  $('#modal-overlay').classList.add('active');
+  $('#new-file-name').value = '';
+  // Reset emoji selection
+  document.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('selected'));
+  document.querySelector('.emoji-opt[data-emoji=""]').classList.add('selected');
+  setTimeout(() => $('#new-file-name').focus(), 100);
+});
+
+// Emoji picker selection
+document.querySelectorAll('.emoji-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
 $('#modal-cancel').addEventListener('click', () => $('#modal-overlay').classList.remove('active'));
 $('#modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) $('#modal-overlay').classList.remove('active'); });
 
 $('#modal-confirm').addEventListener('click', async () => {
   const name = $('#new-file-name').value.trim();
   if (!name) return;
+  const selectedEmoji = document.querySelector('.emoji-opt.selected');
+  const emoji = selectedEmoji ? selectedEmoji.dataset.emoji : '';
   try {
-    await API.post('/files', { name });
+    await API.post('/files', { name, emoji });
     $('#modal-overlay').classList.remove('active');
     toast('Fichier créé !');
     renderHome();
@@ -362,7 +379,7 @@ async function renderTrash() {
 /* ===== FILE DETAIL ===== */
 function openFile(f) {
   currentFile = f;
-  $('#file-title').textContent = f.name;
+  $('#file-title').textContent = (f.emoji ? f.emoji + ' ' : '') + f.name;
   $('#quick-entry').value = '';
   renderSections();
   showScreen('file-screen');

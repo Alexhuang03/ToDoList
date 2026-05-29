@@ -31,6 +31,7 @@ const trashItemSchema = new mongoose.Schema({
 
 const fileSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
+  emoji: { type: String, default: '' },
   ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   // Liste des user IDs qui ont accès en collaboration
   sharedWith: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

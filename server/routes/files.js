@@ -34,9 +34,9 @@ router.get('/', authMiddleware, async (req, res) => {
 // POST /api/files — Créer un fichier
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, emoji } = req.body;
     if (!name) return res.status(400).json({ error: 'Nom requis' });
-    const file = new File({ name, ownerId: req.userId });
+    const file = new File({ name, emoji: emoji || '', ownerId: req.userId });
     await file.save();
     await file.populate('ownerId', 'name email');
     res.status(201).json({ file });
@@ -68,8 +68,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (!file) return res.status(404).json({ error: 'Fichier introuvable' });
     if (!hasAccess(file, req.userId)) return res.status(403).json({ error: 'Accès refusé' });
 
-    const { name, sections } = req.body;
+    const { name, emoji, sections } = req.body;
     if (name !== undefined) file.name = name;
+    if (emoji !== undefined) file.emoji = emoji;
     if (sections !== undefined) file.sections = sections;
     await file.save();
     await file.populate('ownerId', 'name email');
