@@ -1,31 +1,27 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="ToDoList - Application de gestion de tâches collaborative, minimaliste et efficace.">
+  <meta name="description"
+    content="ToDoList - Application de gestion de tâches collaborative, minimaliste et efficace.">
   <title>ToDoList — Organisez vos missions</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
+  <link rel="icon" type="image/png" href="todolist.png">
 </head>
+
 <body>
   <!-- ============== AUTH SCREEN ============== -->
   <div id="auth-screen" class="screen active">
     <div class="auth-container">
       <div class="auth-brand">
         <div class="brand-icon">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <rect width="40" height="40" rx="12" fill="url(#brandGrad)"/>
-            <path d="M12 20L18 26L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <defs>
-              <linearGradient id="brandGrad" x1="0" y1="0" x2="40" y2="40">
-                <stop stop-color="#6C5CE7"/>
-                <stop offset="1" stop-color="#A29BFE"/>
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src="todolist.png" alt="Logo ToDoList" class="brand-logo-img"
+            style="width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto;">
         </div>
         <h1>ToDoList</h1>
         <p class="auth-subtitle">Organisez vos missions avec simplicité</p>
@@ -71,7 +67,8 @@
       <!-- FORGOT PASSWORD FORM -->
       <form id="forgot-form" class="auth-form hidden" autocomplete="off">
         <h2>Mot de passe oublié</h2>
-        <p class="auth-desc">Entrez votre adresse e-mail. Vous recevrez un lien pour réinitialiser votre mot de passe.</p>
+        <p class="auth-desc">Entrez votre adresse e-mail. Vous recevrez un lien pour réinitialiser votre mot de passe.
+        </p>
         <div class="input-group">
           <label for="forgot-email">Adresse e-mail</label>
           <input type="email" id="forgot-email" placeholder="vous@exemple.com" required>
@@ -112,42 +109,37 @@
     <header class="app-header">
       <div class="header-left">
         <div class="header-brand">
-          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-            <rect width="40" height="40" rx="12" fill="url(#brandGrad2)"/>
-            <path d="M12 20L18 26L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <defs>
-              <linearGradient id="brandGrad2" x1="0" y1="0" x2="40" y2="40">
-                <stop stop-color="#6C5CE7"/>
-                <stop offset="1" stop-color="#A29BFE"/>
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src="todolist.png" alt="Logo ToDoList" class="brand-logo-img"
+            style="width: 28px; height: 28px; object-fit: contain;">
           <span>ToDoList</span>
         </div>
       </div>
       <div class="header-right">
         <span id="user-greeting" class="user-greeting"></span>
         <button id="theme-toggle" class="btn-ghost theme-toggle" title="Changer de thème">
-          <svg id="theme-icon-sun" class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-            <circle cx="12" cy="12" r="5"/>
-            <line x1="12" y1="1" x2="12" y2="3"/>
-            <line x1="12" y1="21" x2="12" y2="23"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-            <line x1="1" y1="12" x2="3" y2="12"/>
-            <line x1="21" y1="12" x2="23" y2="12"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          <svg id="theme-icon-sun" class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
           </svg>
-          <svg id="theme-icon-moon" class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+          <svg id="theme-icon-moon" class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
           </svg>
         </button>
         <button id="logout-btn" class="btn-ghost" title="Déconnexion">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
         </button>
       </div>
@@ -157,9 +149,10 @@
       <div class="home-title-row">
         <h1>Mes Fichiers</h1>
         <button id="add-file-btn" class="btn-add" title="Nouveau fichier">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
       </div>
@@ -172,9 +165,10 @@
     <header class="app-header">
       <div class="header-left">
         <button id="back-btn" class="btn-ghost" title="Retour">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/>
-            <polyline points="12 19 5 12 12 5"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
         <div class="file-title-wrapper" id="file-title-wrapper">
@@ -193,21 +187,24 @@
 
     <main class="file-main">
       <div class="quick-entry-wrapper">
-        <input type="text" id="quick-entry" class="quick-entry" placeholder="Nouvelle mission... ajoutez #section pour trier" autocomplete="off">
+        <input type="text" id="quick-entry" class="quick-entry"
+          placeholder="Nouvelle mission... ajoutez #section pour trier" autocomplete="off">
         <kbd class="kbd-hint">Entrée</kbd>
       </div>
       <div id="sections-container" class="sections-container"></div>
       <div id="empty-state" class="empty-state">
         <div class="empty-icon">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.3">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+            stroke-linecap="round" stroke-linejoin="round" opacity="0.3">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
           </svg>
         </div>
-        <p>Entrez votre mission et ajoutez <strong>#section</strong> afin que les tâches puissent être triées automatiquement.</p>
+        <p>Entrez votre mission et ajoutez <strong>#section</strong> afin que les tâches puissent être triées
+          automatiquement.</p>
         <p class="empty-example">Exemple : <code>Rédiger le rapport #Travail</code></p>
       </div>
     </main>
@@ -218,12 +215,13 @@
     <header class="app-header">
       <div class="header-left">
         <button id="trash-back-btn" class="btn-ghost" title="Retour">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/>
-            <polyline points="12 19 5 12 12 5"/>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
-        <h2 class="file-title-header">Corbeille</h2>
+        <h2 class="file-title-header">🗑️ Corbeille</h2>
       </div>
       <div class="header-right">
         <button id="empty-trash-btn" class="btn-danger" title="Vider la corbeille">Vider la corbeille</button>
@@ -233,9 +231,10 @@
       <div id="trash-content" class="trash-content"></div>
       <div id="trash-empty-state" class="empty-state">
         <div class="empty-icon">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.3">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"
+            stroke-linecap="round" stroke-linejoin="round" opacity="0.3">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
           </svg>
         </div>
         <p>La corbeille est vide.</p>
@@ -348,4 +347,5 @@
 
   <script src="app.js"></script>
 </body>
+
 </html>

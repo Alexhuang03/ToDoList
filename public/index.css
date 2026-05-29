@@ -948,3 +948,12 @@ body {
   opacity: 0.2;
   filter: blur(100px);
 }
+
+/* Logo theme colors (transparent PNG styling) */
+.brand-logo-img {
+  filter: invert(1);
+}
+[data-theme="light"] .brand-logo-img {
+  filter: none;
+}
+
