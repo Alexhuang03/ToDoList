@@ -629,7 +629,7 @@ function renderSections() {
   currentFile.sections.forEach(sec => {
     const sorted = [...sec.missions].sort((a, b) => a.done - b.done);
     const doneCount = sec.missions.filter(m => m.done).length;
-    html += `<div class="section"><div class="section-header"><span class="section-tag"># ${esc(sec.name)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
+    html += `<div class="section"><div class="section-header"><span class="section-tag" data-secedit="${esc(sec.name)}" title="Cliquer pour renommer"># ${esc(sec.name)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
     sorted.forEach(m => { html += renderMission(m, sec.name); });
     html += '</div>';
   });
@@ -697,6 +697,44 @@ function renderMission(m, secName) {
 
 /* ===== MISSION EVENTS ===== */
 function bindMissionEvents() {
+  // ── Inline rename section tag ──
+  document.querySelectorAll('[data-secedit]').forEach(span => span.addEventListener('click', () => {
+    const oldName = span.dataset.secedit;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'section-tag-input';
+    input.value = oldName;
+    // auto-size to content
+    input.style.width = Math.max(oldName.length * 9, 60) + 'px';
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let saved = false;
+    const save = async () => {
+      if (saved) return; saved = true;
+      const newName = input.value.trim();
+      if (newName && newName.toLowerCase() !== oldName.toLowerCase()) {
+        // Check no other section has this name
+        const conflict = currentFile.sections.find(s => s.name.toLowerCase() === newName.toLowerCase() && s.name !== oldName);
+        if (conflict) { toast('Une section avec ce nom existe déjà.'); renderSections(); return; }
+        currentFile.sections.forEach(s => { if (s.name === oldName) s.name = newName; });
+        await saveFile();
+        toast('Section renommée !');
+      }
+      renderSections();
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); save(); }
+      if (e.key === 'Escape') { saved = true; renderSections(); }
+    });
+    // auto-resize as user types
+    input.addEventListener('input', () => {
+      input.style.width = Math.max(input.value.length * 9, 60) + 'px';
+    });
+  }));
+
   document.querySelectorAll('[data-check]').forEach(btn => btn.addEventListener('click', async () => {
     currentFile.sections.forEach(s => {
       const m = s.missions.find(x => x.id === btn.dataset.check);
