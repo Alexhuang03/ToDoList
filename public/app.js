@@ -555,7 +555,9 @@ function renderMission(m, secName) {
   const arrow = hasSubtasks ? `<button class="subtask-toggle" data-toggle="${m.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>` : '';
   
   const mClass = dateBadgeClass(m.dueDate, m.done);
-  const dateBadge = m.dueDate ? `<span class="mission-date ${mClass}">${dateBadgeEmoji(mClass)} ${formatDate(m.dueDate)}</span>` : '';
+  const dateBadge = m.done 
+    ? `<span class="mission-date done"> Fait le ${formatDate(m.completedAt || new Date())}</span>`
+    : (m.dueDate ? `<span class="mission-date ${mClass}">${dateBadgeEmoji(mClass)} ${formatDate(m.dueDate)}</span>` : '');
   const mDueDateStr = m.dueDate ? new Date(m.dueDate).toISOString().split('T')[0] : '';
 
   let sub = '';
@@ -572,7 +574,9 @@ function renderMission(m, secName) {
     sub = `<div class="subtasks-list" data-parent="${m.id}">`;
     sortedSub.forEach(st => {
       const stClass = dateBadgeClass(st.dueDate, st.done);
-      const stDateBadge = st.dueDate ? `<span class="subtask-date ${stClass}">${dateBadgeEmoji(stClass)} ${formatDate(st.dueDate)}</span>` : '';
+      const stDateBadge = st.done
+        ? `<span class="subtask-date done"> Fait le ${formatDate(st.completedAt || new Date())}</span>`
+        : (st.dueDate ? `<span class="subtask-date ${stClass}">${dateBadgeEmoji(stClass)} ${formatDate(st.dueDate)}</span>` : '');
       sub += `<div class="subtask-item${st.done ? ' completed' : ''}" data-stid="${st.id}">
         <button class="subtask-check${st.done ? ' checked' : ''}" data-stcheck="${st.id}" data-mid="${m.id}"></button>
         <span class="subtask-text" data-stedit="${st.id}" data-mid="${m.id}">${esc(st.text)}</span>
@@ -605,9 +609,13 @@ function bindMissionEvents() {
       const m = s.missions.find(x => x.id === btn.dataset.check);
       if (m) {
         m.done = !m.done;
+        m.completedAt = m.done ? new Date() : null;
         // Cascader l'état à toutes les sous-missions
         if (m.subtasks && m.subtasks.length > 0) {
-          m.subtasks.forEach(st => st.done = m.done);
+          m.subtasks.forEach(st => {
+            st.done = m.done;
+            st.completedAt = m.done ? new Date() : null;
+          });
         }
       }
     });
@@ -687,9 +695,18 @@ function bindMissionEvents() {
       const m = s.missions.find(x => x.id === mid);
       if (m && m.subtasks) {
         const st = m.subtasks.find(x => x.id === stid);
-        if (st) st.done = !st.done;
-        if (m.subtasks.length > 0 && m.subtasks.every(x => x.done)) m.done = true;
-        if (m.subtasks.some(x => !x.done)) m.done = false;
+        if (st) {
+          st.done = !st.done;
+          st.completedAt = st.done ? new Date() : null;
+        }
+        if (m.subtasks.length > 0 && m.subtasks.every(x => x.done)) {
+          m.done = true;
+          m.completedAt = m.completedAt || new Date();
+        }
+        if (m.subtasks.some(x => !x.done)) {
+          m.done = false;
+          m.completedAt = null;
+        }
       }
     });
     await saveFile(); renderSections();

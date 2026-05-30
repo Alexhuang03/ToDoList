@@ -5,6 +5,7 @@ const subtaskSchema = new mongoose.Schema({
   text: { type: String, required: true },
   done: { type: Boolean, default: false },
   dueDate: { type: Date, default: null },
+  completedAt: { type: Date, default: null },
 }, { _id: false });
 
 const missionSchema = new mongoose.Schema({
@@ -12,6 +13,7 @@ const missionSchema = new mongoose.Schema({
   text: { type: String, required: true },
   done: { type: Boolean, default: false },
   dueDate: { type: Date, default: null },
+  completedAt: { type: Date, default: null },
   subtasks: { type: [subtaskSchema], default: [] },
 }, { _id: false });
 

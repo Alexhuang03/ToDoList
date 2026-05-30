@@ -1,7 +1,7 @@
 /* ===== RESET & BASE ===== */
 *, *::before, *::after {
   margin: 0; padding: 0; box-sizing: border-box;
-  transition: background-color 0.7s ease, color 0.7s ease, border-color 0.7s ease, box-shadow 0.7s ease;
+  transition: background-color 1s ease, color 1s ease, border-color 1s ease, box-shadow 1s ease;
 }
 
 :root {
@@ -62,11 +62,68 @@
 html { font-size: 15px; }
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+}
+
+/* ===== WALLPAPER ===== */
+/* ::before = image (filterable), ::after = readability overlay */
+#home-screen,
+#file-screen,
+#trash-screen {
+  position: relative;
+}
+
+/* Wallpaper image layer */
+#home-screen::before,
+#file-screen::before,
+#trash-screen::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('cat-todolist.jpeg');
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+  z-index: 0;
+  /* Dark mode: invert image → black bg + white sketch lines */
+  filter: invert(1) brightness(0.75);
+  transition: filter 1s ease, opacity 1s ease;
+}
+/* Light mode: keep original colors, slightly dimmed */
+[data-theme="light"] #home-screen::before,
+[data-theme="light"] #file-screen::before,
+[data-theme="light"] #trash-screen::before {
+  filter: none;
+  opacity: 0.45;
+}
+
+/* Readability overlay layer (sits on top of image) */
+#home-screen::after,
+#file-screen::after,
+#trash-screen::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 16, 0.60);
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="light"] #home-screen::after,
+[data-theme="light"] #file-screen::after,
+[data-theme="light"] #trash-screen::after {
+  background: rgba(244, 245, 247, 0.72);
+}
+
+/* All direct children sit above both pseudo-elements */
+#home-screen > *,
+#file-screen > *,
+#trash-screen > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* ===== SCREENS ===== */
@@ -672,7 +729,7 @@ body {
 .mission-date.ok, .subtask-date.ok { color: #27ae60; border-color: #27ae60; background: rgba(39,174,96,0.12); }
 .mission-date.warning, .subtask-date.warning { color: #e67e22; border-color: #e67e22; background: rgba(230,126,34,0.12); }
 .mission-date.urgent, .mission-date.overdue, .subtask-date.urgent, .subtask-date.overdue { color: var(--danger); border-color: var(--danger); background: var(--danger-glow); }
-.mission-date.done, .subtask-date.done { color: var(--text-dim); border-color: var(--border); text-decoration: line-through; }
+.mission-date.done, .subtask-date.done { color: var(--text-muted); border-color: var(--border); background: var(--bg-hover); text-decoration: none; }
 .dp-popup {
   position: absolute;
   z-index: 999;
