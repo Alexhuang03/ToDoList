@@ -187,9 +187,11 @@
 
     <main class="file-main">
       <div class="quick-entry-wrapper">
+        <div id="quick-entry-ghost" class="quick-entry-ghost" aria-hidden="true"></div>
         <input type="text" id="quick-entry" class="quick-entry"
           placeholder="Nouvelle mission... ajoutez #section pour trier" autocomplete="off">
         <kbd class="kbd-hint">Entrée</kbd>
+        <kbd id="tab-hint" class="kbd-hint tab-hint" style="display:none;">Tab ↹</kbd>
       </div>
       <div id="sections-container" class="sections-container"></div>
       <div id="empty-state" class="empty-state">

@@ -504,22 +504,115 @@ function stopPolling() {
   if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
 }
 
-/* ===== QUICK ENTRY ===== */
-$('#quick-entry').addEventListener('keydown', async e => {
-  if (e.key !== 'Enter') return;
-  const val = e.target.value.trim();
-  if (!val) return;
-  const hashMatch = val.match(/#(\S+)/);
-  const sectionName = hashMatch ? hashMatch[1] : 'Général';
-  const missionText = val.replace(/#\S+/g, '').trim();
-  if (!missionText) return;
-  let sec = currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
-  if (!sec) { sec = { name: sectionName, missions: [] }; currentFile.sections.push(sec); }
-  sec.missions.push({ id: uid(), text: missionText, done: false, subtasks: [] });
-  e.target.value = '';
-  await saveFile();
-  renderSections();
-});
+/* ===== QUICK ENTRY — SECTION AUTOCOMPLETE ===== */
+(function () {
+  const input    = $('#quick-entry');
+  const ghost    = $('#quick-entry-ghost');
+  const tabHint  = $('#tab-hint');
+  let currentSuggestion = ''; // full section name to suggest
+  let hashStart = -1;          // index of '#' in input value
+
+  function getSections() {
+    return currentFile ? currentFile.sections.map(s => s.name) : [];
+  }
+
+  function findMatch(typed) {
+    // typed = text after '#', case-insensitive prefix match
+    if (!typed) return '';
+    const lower = typed.toLowerCase();
+    return getSections().find(s => s.toLowerCase().startsWith(lower) && s.toLowerCase() !== lower) || '';
+  }
+
+  function updateGhost() {
+    const val = input.value;
+    const hashIdx = val.lastIndexOf('#');
+
+    if (hashIdx === -1) {
+      // No '#' → clear ghost
+      ghost.innerHTML = '';
+      tabHint.style.display = 'none';
+      currentSuggestion = '';
+      hashStart = -1;
+      return;
+    }
+
+    hashStart = hashIdx;
+    const afterHash = val.slice(hashIdx + 1); // text typed after '#'
+    // Only suggest if afterHash has no spaces (still completing the tag)
+    if (/\s/.test(afterHash)) {
+      ghost.innerHTML = '';
+      tabHint.style.display = 'none';
+      currentSuggestion = '';
+      return;
+    }
+
+    const match = findMatch(afterHash);
+    if (!match) {
+      ghost.innerHTML = '';
+      tabHint.style.display = 'none';
+      currentSuggestion = '';
+      return;
+    }
+
+    currentSuggestion = match;
+    const completion = match.slice(afterHash.length); // remaining chars to complete
+
+    // Build ghost: transparent copy of typed text + coloured completion
+    const typedSpan    = `<span class="ghost-typed">${esc(val)}</span>`;
+    const suggSpan     = `<span class="ghost-suggestion">${esc(completion)}</span>`;
+    ghost.innerHTML    = typedSpan + suggSpan;
+    tabHint.style.display = 'block';
+  }
+
+  function acceptSuggestion() {
+    if (!currentSuggestion || hashStart === -1) return;
+    const val       = input.value;
+    const afterHash = val.slice(hashStart + 1);
+    const completion = currentSuggestion.slice(afterHash.length);
+    input.value = val + completion;
+    updateGhost();
+    input.focus();
+  }
+
+  input.addEventListener('input', updateGhost);
+
+  input.addEventListener('keydown', async e => {
+    // Tab → accept suggestion
+    if (e.key === 'Tab') {
+      if (currentSuggestion) {
+        e.preventDefault();
+        acceptSuggestion();
+      }
+      return;
+    }
+
+    // Escape → clear suggestion
+    if (e.key === 'Escape') {
+      ghost.innerHTML = '';
+      tabHint.style.display = 'none';
+      currentSuggestion = '';
+      return;
+    }
+
+    // Enter → add mission
+    if (e.key !== 'Enter') return;
+    const val = e.target.value.trim();
+    if (!val) return;
+    const hashMatch   = val.match(/#(\S+)/);
+    const sectionName = hashMatch ? hashMatch[1] : 'Général';
+    const missionText = val.replace(/#\S+/g, '').trim();
+    if (!missionText) return;
+    let sec = currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
+    if (!sec) { sec = { name: sectionName, missions: [] }; currentFile.sections.push(sec); }
+    sec.missions.push({ id: uid(), text: missionText, done: false, subtasks: [] });
+    e.target.value = '';
+    ghost.innerHTML = '';
+    tabHint.style.display = 'none';
+    currentSuggestion = '';
+    await saveFile();
+    renderSections();
+  });
+})();
 
 /* ===== RENDER SECTIONS ===== */
 function renderSections() {
