@@ -137,6 +137,18 @@ body {
   justify-content: center;
   position: relative;
   overflow: hidden;
+  background: url('/Images/accueil.png') center/cover no-repeat;
+}
+#auth-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 16, 0.45);
+  z-index: 1;
+  transition: background 1s ease;
+}
+[data-theme="light"] #auth-screen::before {
+  background: rgba(244, 245, 247, 0.45);
 }
 #auth-screen.active { display: flex; }
 
@@ -145,6 +157,7 @@ body {
   max-width: 420px;
   padding: 2.5rem;
   z-index: 2;
+  position: relative;
 }
 
 .auth-visual {
