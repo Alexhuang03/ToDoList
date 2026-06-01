@@ -151,4 +151,63 @@ router.post('/reset-password/:token', async (req, res) => {
   }
 });
 
+// PATCH /api/auth/me — Modifier le profil (nom, fond d'écran, couleur d'accentuation, thème)
+router.patch('/me', authMiddleware, async (req, res) => {
+  try {
+    const { name, wallpaper, accent, theme } = req.body;
+    const updates = {};
+    if (name !== undefined) {
+      if (!name || !name.trim()) return res.status(400).json({ error: 'Nom requis' });
+      updates.name = name.trim();
+    }
+    if (wallpaper !== undefined) updates.wallpaper = wallpaper;
+    if (accent !== undefined) updates.accent = accent;
+    if (theme !== undefined) updates.theme = theme;
+
+    const user = await User.findByIdAndUpdate(req.userId, updates, { new: true });
+    res.json({ user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// DELETE /api/auth/me — Supprimer le compte
+router.delete('/me', authMiddleware, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: 'Mot de passe requis' });
+
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+
+    // Vérifier le mot de passe
+    const valid = await user.verifyPassword(password);
+    if (!valid) return res.status(401).json({ error: 'Mot de passe incorrect' });
+
+    const File = require('../models/File');
+    const Trash = require('../models/Trash');
+
+    // Supprimer tous les fichiers dont l'utilisateur est propriétaire
+    await File.deleteMany({ ownerId: req.userId });
+
+    // Retirer l'utilisateur des listes sharedWith des fichiers collaboratifs
+    await File.updateMany(
+      { sharedWith: req.userId },
+      { $pull: { sharedWith: req.userId } }
+    );
+
+    // Supprimer la corbeille de l'utilisateur
+    await Trash.deleteMany({ userId: req.userId });
+
+    // Supprimer l'utilisateur
+    await User.findByIdAndDelete(req.userId);
+
+    res.json({ message: 'Compte supprimé avec succès' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 module.exports = { router, authMiddleware };

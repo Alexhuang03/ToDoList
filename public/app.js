@@ -11,7 +11,8 @@ const API = {
   get(path) { return this.req('GET', path); },
   post(path, body) { return this.req('POST', path, body); },
   put(path, body) { return this.req('PUT', path, body); },
-  del(path) { return this.req('DELETE', path); },
+  patch(path, body) { return this.req('PATCH', path, body); },
+  del(path, body) { return this.req('DELETE', path, body); },
 };
 
 /* ===== STATE ===== */
@@ -19,6 +20,8 @@ let currentUser = null;
 let currentFile = null;
 let pollInterval = null;
 const expandedMissions = new Set();
+let applyWallpaper = null;
+let applyAccent = null;
 
 /* ===== HELPERS ===== */
 const $ = s => document.querySelector(s);
@@ -115,11 +118,52 @@ $('#logout-btn').addEventListener('click', () => {
   currentUser = null;
   currentFile = null;
   stopPolling();
+  // Reset personalization settings back to default on logout
+  if (applyWallpaper) applyWallpaper({ type: 'default' }, false);
+  if (applyAccent) applyAccent('#6C5CE7', false);
+  applyTheme(localStorage.getItem('tdl_theme') || 'dark', false);
   showScreen('auth-screen');
 });
 
 function enterApp() {
   $('#user-greeting').textContent = `Bonjour, ${currentUser.name}`;
+
+  // Apply theme settings for this user (cached locally or from DB)
+  let userTheme = localStorage.getItem('tdl_theme_' + currentUser._id);
+  if (!userTheme && currentUser.theme) {
+    userTheme = currentUser.theme;
+  }
+  applyTheme(userTheme || 'dark', false);
+
+  // Apply personalized settings for this user (cached locally per user, or from DB)
+  if (applyWallpaper) {
+    let wp = localStorage.getItem('tdl_wallpaper_' + currentUser._id);
+    if (!wp && currentUser.wallpaper) {
+      wp = currentUser.wallpaper;
+    }
+    if (wp) {
+      try {
+        applyWallpaper(JSON.parse(wp), false);
+      } catch (_) {
+        applyWallpaper({ type: 'default' }, false);
+      }
+    } else {
+      applyWallpaper({ type: 'default' }, false);
+    }
+  }
+
+  if (applyAccent) {
+    let acc = localStorage.getItem('tdl_accent_' + currentUser._id);
+    if (!acc && currentUser.accent) {
+      acc = currentUser.accent;
+    }
+    if (acc) {
+      applyAccent(acc, false);
+    } else {
+      applyAccent('#6C5CE7', false);
+    }
+  }
+
   renderHome();
   showScreen('home-screen');
 }
@@ -1051,12 +1095,527 @@ async function applyDueDate(dateStr) {
 }
 
 /* ===== THEME ===== */
-function applyTheme(theme) {
+function applyTheme(theme, persistToDb = true) {
   const root = document.documentElement;
   const sunIcon = $('#theme-icon-sun'), moonIcon = $('#theme-icon-moon');
-  if (theme === 'light') { root.setAttribute('data-theme', 'light'); sunIcon.style.display = 'block'; moonIcon.style.display = 'none'; }
-  else { root.removeAttribute('data-theme'); sunIcon.style.display = 'none'; moonIcon.style.display = 'block'; }
-  localStorage.setItem('tdl_theme', theme);
+  if (theme === 'light') {
+    root.setAttribute('data-theme', 'light');
+    sunIcon.style.display = 'block';
+    moonIcon.style.display = 'none';
+  } else {
+    root.removeAttribute('data-theme');
+    sunIcon.style.display = 'none';
+    moonIcon.style.display = 'block';
+  }
+
+  if (currentUser) {
+    localStorage.setItem('tdl_theme_' + currentUser._id, theme);
+    if (persistToDb) {
+      API.patch('/auth/me', { theme }).catch(console.error);
+    }
+  } else {
+    localStorage.setItem('tdl_theme', theme);
+  }
 }
-applyTheme(localStorage.getItem('tdl_theme') || 'dark');
-$('#theme-toggle').addEventListener('click', () => { applyTheme(localStorage.getItem('tdl_theme') === 'dark' ? 'light' : 'dark'); });
+
+// Initial default theme (guest mode)
+applyTheme(localStorage.getItem('tdl_theme') || 'dark', false);
+
+$('#theme-toggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const target = current === 'dark' ? 'light' : 'dark';
+  applyTheme(target, true);
+});
+
+/* ===== SETTINGS MODULE ===== */
+(function () {
+  const panel    = $('#settings-panel');
+  const overlay  = $('#settings-overlay');
+  const openBtn  = $('#settings-btn');
+  const closeBtn = $('#settings-close');
+
+  function openSettings() {
+    panel.classList.add('open');
+    overlay.classList.add('open');
+    // Populate profile fields
+    if (currentUser) {
+      $('#settings-name').value = currentUser.name || '';
+      $('#settings-email').textContent = currentUser.email || '';
+    }
+  }
+  function closeSettings() {
+    panel.classList.remove('open');
+    overlay.classList.remove('open');
+    // Reset delete confirm box
+    $('#delete-confirm-box').style.display = 'none';
+    $('#delete-password').value = '';
+    $('#delete-error').textContent = '';
+  }
+
+  openBtn.addEventListener('click', openSettings);
+  closeBtn.addEventListener('click', closeSettings);
+  overlay.addEventListener('click', closeSettings);
+
+  /* ── PROFILE: Save name ── */
+  $('#settings-save-name').addEventListener('click', async () => {
+    const newName = $('#settings-name').value.trim();
+    if (!newName) return toast('Le nom ne peut pas être vide.');
+    if (newName === (currentUser && currentUser.name)) return;
+    try {
+      const data = await API.req('PATCH', '/auth/me', { name: newName });
+      currentUser = data.user;
+      // Update greeting in header
+      const greet = $('#user-greeting');
+      if (greet) greet.textContent = `Bonjour, ${currentUser.name}`;
+      toast('Nom mis à jour !');
+    } catch (err) {
+      toast('Erreur : ' + err.message);
+    }
+  });
+
+  /* ── PROFILE: Change password link ── */
+  $('#settings-change-pwd').addEventListener('click', () => {
+    closeSettings();
+    // Logout then redirect to forgot password form
+    localStorage.removeItem('tdl_token');
+    currentUser = null;
+    showScreen('auth-screen');
+    // Trigger the forgot-password form
+    setTimeout(() => {
+      $('#login-form').classList.add('hidden');
+      $('#forgot-form').classList.remove('hidden');
+      $('#forgot-email').focus();
+    }, 100);
+  });
+
+  /* ── PROFILE: Delete account ── */
+  $('#delete-account-btn').addEventListener('click', () => {
+    $('#delete-confirm-box').style.display = 'block';
+    $('#delete-password').focus();
+  });
+  $('#delete-cancel-btn').addEventListener('click', () => {
+    $('#delete-confirm-box').style.display = 'none';
+    $('#delete-password').value = '';
+    $('#delete-error').textContent = '';
+  });
+  $('#delete-confirm-btn').addEventListener('click', async () => {
+    const pwd = $('#delete-password').value;
+    const errEl = $('#delete-error');
+    errEl.textContent = '';
+    if (!pwd) { errEl.textContent = 'Veuillez saisir votre mot de passe.'; return; }
+    try {
+      await API.req('DELETE', '/auth/me', { password: pwd });
+      // Clean up and log out
+      localStorage.removeItem('tdl_token');
+      localStorage.removeItem('tdl_wallpaper');
+      localStorage.removeItem('tdl_accent');
+      currentUser = null;
+      closeSettings();
+      showScreen('auth-screen');
+      toast('Compte supprimé.');
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+  });
+
+  /* ── CANVAS COLOR PICKER CLASS ── */
+  class CanvasColorPicker {
+    constructor(containerId, initialHex, onChange) {
+      this.container = $('#' + containerId);
+      this.canvasSatVal = this.container.querySelector('.cp-satval');
+      this.canvasHue = this.container.querySelector('.cp-hue');
+      this.cursorSatVal = this.container.querySelector('.cp-cursor');
+      this.cursorHue = this.container.querySelector('.cp-hue-cursor');
+      this.previewSwatch = this.container.querySelector('.cp-preview-swatch');
+      this.hexLabel = this.container.querySelector('.cp-hex-label');
+
+      this.onChange = onChange;
+      this.ctxSatVal = this.canvasSatVal.getContext('2d', { willReadFrequently: true });
+      this.ctxHue = this.canvasHue.getContext('2d', { willReadFrequently: true });
+
+      this.currentHue = 0;
+      this.currentSat = 100;
+      this.currentVal = 100;
+
+      this.initHueCanvas();
+      this.setColor(initialHex);
+      this.setupEvents();
+    }
+
+    setColor(hex) {
+      const rgb = this.hexToRgb(hex);
+      if (!rgb) return;
+      const hsv = this.rgbToHsv(rgb.r, rgb.g, rgb.b);
+      this.currentHue = hsv.h;
+      this.currentSat = hsv.s * 100;
+      this.currentVal = hsv.v * 100;
+
+      this.drawSatValCanvas();
+      this.updateUI();
+    }
+
+    initHueCanvas() {
+      const w = this.canvasHue.width;
+      const h = this.canvasHue.height;
+      this.ctxHue.clearRect(0, 0, w, h);
+      const grad = this.ctxHue.createLinearGradient(0, 0, w, 0);
+      const stops = [0, 60, 120, 180, 240, 300, 360];
+      stops.forEach(stop => {
+        grad.addColorStop(stop / 360, `hsl(${stop}, 100%, 50%)`);
+      });
+      this.ctxHue.fillStyle = grad;
+      this.ctxHue.fillRect(0, 0, w, h);
+    }
+
+    drawSatValCanvas() {
+      const w = this.canvasSatVal.width;
+      const h = this.canvasSatVal.height;
+      this.ctxSatVal.clearRect(0, 0, w, h);
+
+      // Base color for Hue
+      this.ctxSatVal.fillStyle = `hsl(${this.currentHue}, 100%, 50%)`;
+      this.ctxSatVal.fillRect(0, 0, w, h);
+
+      // Saturation (white to transparent)
+      const whiteGrad = this.ctxSatVal.createLinearGradient(0, 0, w, 0);
+      whiteGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      whiteGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      this.ctxSatVal.fillStyle = whiteGrad;
+      this.ctxSatVal.fillRect(0, 0, w, h);
+
+      // Value (transparent to black)
+      const blackGrad = this.ctxSatVal.createLinearGradient(0, 0, 0, h);
+      blackGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      blackGrad.addColorStop(1, 'rgba(0, 0, 0, 1)');
+      this.ctxSatVal.fillStyle = blackGrad;
+      this.ctxSatVal.fillRect(0, 0, w, h);
+    }
+
+    updateUI() {
+      const wSV = this.canvasSatVal.width;
+      const hSV = this.canvasSatVal.height;
+      const xSV = (this.currentSat / 100) * wSV;
+      const ySV = (1 - (this.currentVal / 100)) * hSV;
+      this.cursorSatVal.style.left = `${xSV}px`;
+      this.cursorSatVal.style.top = `${ySV}px`;
+
+      const wH = this.canvasHue.width;
+      const xH = (this.currentHue / 360) * wH;
+      this.cursorHue.style.left = `${xH}px`;
+
+      const hex = this.getHex();
+      this.previewSwatch.style.backgroundColor = hex;
+      this.hexLabel.textContent = hex;
+    }
+
+    getHex() {
+      const rgb = this.hsvToRgb(this.currentHue / 360, this.currentSat / 100, this.currentVal / 100);
+      return this.rgbToHex(rgb.r, rgb.g, rgb.b);
+    }
+
+    setupEvents() {
+      let isDraggingSV = false;
+      let isDraggingHue = false;
+
+      const handleSV = (clientX, clientY) => {
+        const rect = this.canvasSatVal.getBoundingClientRect();
+        let x = clientX - rect.left;
+        let y = clientY - rect.top;
+        x = Math.max(0, Math.min(x, rect.width));
+        y = Math.max(0, Math.min(y, rect.height));
+
+        this.currentSat = (x / rect.width) * 100;
+        this.currentVal = (1 - (y / rect.height)) * 100;
+        this.updateUI();
+        if (this.onChange) this.onChange(this.getHex());
+      };
+
+      const handleHue = (clientX) => {
+        const rect = this.canvasHue.getBoundingClientRect();
+        let x = clientX - rect.left;
+        x = Math.max(0, Math.min(x, rect.width));
+
+        this.currentHue = (x / rect.width) * 360;
+        this.drawSatValCanvas();
+        this.updateUI();
+        if (this.onChange) this.onChange(this.getHex());
+      };
+
+      this.canvasSatVal.addEventListener('mousedown', (e) => {
+        isDraggingSV = true;
+        handleSV(e.clientX, e.clientY);
+      });
+
+      this.canvasHue.addEventListener('mousedown', (e) => {
+        isDraggingHue = true;
+        handleHue(e.clientX);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDraggingSV) handleSV(e.clientX, e.clientY);
+        if (isDraggingHue) handleHue(e.clientX);
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDraggingSV = false;
+        isDraggingHue = false;
+      });
+
+      // Touch events
+      this.canvasSatVal.addEventListener('touchstart', (e) => {
+        isDraggingSV = true;
+        const t = e.touches[0];
+        handleSV(t.clientX, t.clientY);
+      }, { passive: true });
+
+      this.canvasHue.addEventListener('touchstart', (e) => {
+        isDraggingHue = true;
+        const t = e.touches[0];
+        handleHue(t.clientX);
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 0) return;
+        const t = e.touches[0];
+        if (isDraggingSV) handleSV(t.clientX, t.clientY);
+        if (isDraggingHue) handleHue(t.clientX);
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => {
+        isDraggingSV = false;
+        isDraggingHue = false;
+      });
+    }
+
+    hexToRgb(hex) {
+      const clean = hex.replace('#', '');
+      const num = parseInt(clean, 16);
+      return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
+      };
+    }
+
+    rgbToHsv(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, v = max;
+      const d = max - min;
+      s = max === 0 ? 0 : d / max;
+      if (max === min) {
+        h = 0;
+      } else {
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return { h: h * 360, s, v };
+    }
+
+    hsvToRgb(h, s, v) {
+      let r, g, b;
+      const i = Math.floor(h * 6);
+      const f = h * 6 - i;
+      const p = v * (1 - s);
+      const q = v * (1 - f * s);
+      const t = v * (1 - (1 - f) * s);
+      switch (i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+      }
+      return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+      };
+    }
+
+    rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+  }
+
+  /* ── WALLPAPER ── */
+  const wallpaperStyleTag = (() => {
+    const s = document.createElement('style');
+    s.id = 'wallpaper-dynamic';
+    document.head.appendChild(s);
+    return s;
+  })();
+
+  let wpColorPickerInstance = null;
+
+  applyWallpaper = function (cfg, persistToDb = true) {
+    const screens = ['#home-screen', '#file-screen', '#trash-screen'];
+    if (cfg.type === 'default') {
+      wallpaperStyleTag.textContent = '';
+    } else if (cfg.type === 'color') {
+      wallpaperStyleTag.textContent = `
+        ${screens.map(s => s + '::before').join(', ')} {
+          background-image: none !important;
+          background: ${cfg.value} !important;
+          filter: none !important;
+          opacity: 1 !important;
+        }
+        ${screens.map(s => s + '::after').join(', ')} {
+          background: transparent !important;
+        }
+      `;
+    } else if (cfg.type === 'image') {
+      wallpaperStyleTag.textContent = `
+        ${screens.map(s => s + '::before').join(', ')} {
+          background-image: url('${cfg.value}') !important;
+          filter: none !important;
+          opacity: 1 !important;
+        }
+        ${screens.map(s => s + '::after').join(', ')} {
+          background: rgba(10,10,16,0.55) !important;
+        }
+        [data-theme="light"] ${screens.map(s => s + '::after').join(', [data-theme="light"] ')} {
+          background: rgba(244,245,247,0.65) !important;
+        }
+      `;
+    }
+
+    if (currentUser) {
+      localStorage.setItem('tdl_wallpaper_' + currentUser._id, JSON.stringify(cfg));
+      if (persistToDb) {
+        API.patch('/auth/me', { wallpaper: JSON.stringify(cfg) }).catch(console.error);
+      }
+    }
+
+    const radios = document.querySelectorAll('input[name="wallpaper"]');
+    radios.forEach(r => { r.checked = r.value === cfg.type; });
+
+    if (cfg.type === 'color') {
+      $('#wp-color-row').style.display = 'block';
+      $('#wp-image-row').style.display = 'none';
+      if (wpColorPickerInstance) {
+        wpColorPickerInstance.setColor(cfg.value);
+      }
+      $('#wp-color-preview').style.background = cfg.value;
+    } else if (cfg.type === 'image') {
+      $('#wp-color-row').style.display = 'none';
+      $('#wp-image-row').style.display = 'flex';
+    } else {
+      $('#wp-color-row').style.display = 'none';
+      $('#wp-image-row').style.display = 'none';
+    }
+  };
+
+  // Instantiate wallpaper picker
+  wpColorPickerInstance = new CanvasColorPicker('wp-cpw', '#1a1a30', (hex) => {
+    applyWallpaper({ type: 'color', value: hex });
+  });
+
+  document.querySelectorAll('input[name="wallpaper"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const type = radio.value;
+      if (type === 'default') applyWallpaper({ type: 'default' });
+      else if (type === 'color') {
+        const hex = wpColorPickerInstance.getHex();
+        applyWallpaper({ type: 'color', value: hex });
+      }
+      else if (type === 'image') {
+        applyWallpaper({ type: 'image', value: '' });
+        $('#wp-image-row').style.display = 'flex';
+      }
+    });
+  });
+
+  $('#wp-upload-btn').addEventListener('click', () => $('#wallpaper-file-input').click());
+  $('#wallpaper-file-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast('Image trop lourde (max 2 Mo).');
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      $('#wp-image-preview').style.background = `url(${dataUrl}) center/cover`;
+      $('#wp-image-preview').textContent = '';
+      applyWallpaper({ type: 'image', value: dataUrl });
+      toast('Fond d\'écran appliqué !');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  /* ── ACCENT COLOR ── */
+  const DEFAULT_ACCENT = '#6C5CE7';
+
+  function hexToRgb(hex) {
+    const clean = hex.replace('#', '');
+    const num = parseInt(clean, 16);
+    return {
+      r: (num >> 16) & 255,
+      g: (num >> 8) & 255,
+      b: num & 255
+    };
+  }
+
+  function lightenHex(hex, amount = 30) {
+    let { r, g, b } = hexToRgb(hex);
+    r = Math.min(255, r + amount); g = Math.min(255, g + amount); b = Math.min(255, b + amount);
+    return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  let accColorPickerInstance = null;
+
+  applyAccent = function (hex, persistToDb = true) {
+    const root = document.documentElement;
+    const { r, g, b } = hexToRgb(hex);
+    root.style.setProperty('--accent', hex);
+    root.style.setProperty('--accent-light', lightenHex(hex, 30));
+    root.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.25)`);
+    root.style.setProperty('--border-focus', hex);
+
+    if (currentUser) {
+      localStorage.setItem('tdl_accent_' + currentUser._id, hex);
+      if (persistToDb) {
+        API.patch('/auth/me', { accent: hex }).catch(console.error);
+      }
+    }
+
+    if (accColorPickerInstance) {
+      accColorPickerInstance.setColor(hex);
+    }
+
+    document.querySelectorAll('.accent-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.color === hex);
+    });
+  };
+
+  // Instantiate accent color picker
+  accColorPickerInstance = new CanvasColorPicker('acc-cpw', '#6C5CE7', (hex) => {
+    applyAccent(hex);
+  });
+
+  // Apply startup defaults
+  applyWallpaper({ type: 'default' }, false);
+  applyAccent(DEFAULT_ACCENT, false);
+
+  document.querySelectorAll('.accent-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      applyAccent(swatch.dataset.color);
+    });
+  });
+
+  $('#accent-reset-btn').addEventListener('click', () => {
+    applyAccent(DEFAULT_ACCENT);
+    toast('Couleur réinitialisée.');
+  });
+
+})(); // end settings module
+
+

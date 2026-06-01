@@ -7,6 +7,9 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   resetToken: { type: String, default: null },
   resetTokenExpiry: { type: Date, default: null },
+  wallpaper: { type: String, default: null },
+  accent: { type: String, default: null },
+  theme: { type: String, default: 'dark' },
 }, { timestamps: true });
 
 // Hash du mot de passe avant sauvegarde

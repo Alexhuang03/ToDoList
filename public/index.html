@@ -134,6 +134,13 @@
             <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
           </svg>
         </button>
+        <button id="settings-btn" class="btn-ghost" title="Paramètres">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
         <button id="logout-btn" class="btn-ghost" title="Déconnexion">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -347,7 +354,137 @@
   <!-- Toast Notification -->
   <div id="toast" class="toast"></div>
 
-  <script src="app.js"></script>
-</body>
+  <!-- ============== SETTINGS DRAWER ============== -->
+  <div id="settings-overlay" class="settings-overlay"></div>
+  <aside id="settings-panel" class="settings-panel">
+    <div class="settings-header">
+      <h2 class="settings-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        Paramètres
+      </h2>
+      <button id="settings-close" class="btn-ghost settings-close-btn" title="Fermer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
 
+    <div class="settings-body">
+      <!-- PROFIL -->
+      <section class="settings-section">
+        <h3 class="settings-section-title">👤 Profil</h3>
+        <div class="input-group">
+          <label for="settings-name">Nom d'affichage</label>
+          <div style="display:flex;gap:0.5rem;">
+            <input type="text" id="settings-name" placeholder="Votre nom" autocomplete="off">
+            <button id="settings-save-name" class="btn-primary" style="white-space:nowrap;padding:0 1rem;">Sauvegarder</button>
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Adresse e-mail</label>
+          <p id="settings-email" class="settings-readonly-field"></p>
+        </div>
+        <button id="settings-change-pwd" class="btn-ghost settings-action-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Changer le mot de passe
+        </button>
+        <div id="delete-account-section" class="delete-account-section">
+          <button id="delete-account-btn" class="btn-danger-outline settings-action-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            Supprimer mon compte
+          </button>
+          <div id="delete-confirm-box" class="delete-confirm-box" style="display:none;">
+            <p class="delete-confirm-warning">⚠️ Cette action est <strong>irréversible</strong>. Tous vos fichiers seront supprimés.</p>
+            <div class="input-group">
+              <label for="delete-password">Confirmez avec votre mot de passe</label>
+              <input type="password" id="delete-password" placeholder="Mot de passe actuel" autocomplete="current-password">
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+              <button id="delete-confirm-btn" class="btn-danger" style="flex:1;">Supprimer définitivement</button>
+              <button id="delete-cancel-btn" class="btn-ghost" style="flex:1;">Annuler</button>
+            </div>
+            <p id="delete-error" class="auth-error"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOND D'ÉCRAN -->
+      <section class="settings-section">
+        <h3 class="settings-section-title">🖼️ Fond d'écran</h3>
+        <div class="wallpaper-options">
+          <label class="wallpaper-option" id="wp-opt-default">
+            <input type="radio" name="wallpaper" value="default" checked>
+            <span class="wallpaper-option-preview" style="background:url('cat-todolist.jpeg') center/cover;"></span>
+            <span>Original</span>
+          </label>
+          <label class="wallpaper-option" id="wp-opt-color">
+            <input type="radio" name="wallpaper" value="color">
+            <span class="wallpaper-option-preview" id="wp-color-preview" style="background:#1a1a30;"></span>
+            <span>Couleur unie</span>
+          </label>
+          <label class="wallpaper-option" id="wp-opt-image">
+            <input type="radio" name="wallpaper" value="image">
+            <span class="wallpaper-option-preview" id="wp-image-preview" style="background:var(--bg-card);display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📁</span>
+            <span>Image perso</span>
+          </label>
+        </div>
+        <div id="wp-color-row" class="color-picker-row" style="display:none;">
+          <div class="color-picker-widget" id="wp-cpw">
+            <div class="cp-satval-wrap">
+              <canvas class="cp-satval" id="wp-cp-satval" width="260" height="140"></canvas>
+              <div class="cp-cursor" id="wp-cp-cursor"></div>
+            </div>
+            <div class="cp-hue-wrap">
+              <canvas class="cp-hue" id="wp-cp-hue" width="260" height="14"></canvas>
+              <div class="cp-hue-cursor" id="wp-cp-hue-cursor"></div>
+            </div>
+            <div class="cp-preview-row">
+              <div class="cp-preview-swatch" id="wp-cp-preview"></div>
+              <span class="cp-hex-label" id="wp-cp-hex">#1a1a30</span>
+            </div>
+          </div>
+        </div>
+        <div id="wp-image-row" class="settings-sub-row" style="display:none;">
+          <button id="wp-upload-btn" class="btn-ghost settings-action-btn">📂 Importer une image (max 2 Mo)</button>
+          <input type="file" id="wallpaper-file-input" accept="image/*" style="display:none;">
+        </div>
+      </section>
+
+      <!-- COULEUR D'ACCENTUATION -->
+      <section class="settings-section">
+        <h3 class="settings-section-title">🎨 Couleur d'accentuation</h3>
+        <p class="settings-hint">Remplace le violet sur les boutons et les badges.</p>
+        <div class="accent-presets">
+          <button class="accent-swatch" data-color="#6C5CE7" style="background:#6C5CE7;" title="Violet (défaut)"></button>
+          <button class="accent-swatch" data-color="#e84393" style="background:#e84393;" title="Rose"></button>
+          <button class="accent-swatch" data-color="#00b894" style="background:#00b894;" title="Vert"></button>
+          <button class="accent-swatch" data-color="#0984e3" style="background:#0984e3;" title="Bleu"></button>
+          <button class="accent-swatch" data-color="#e17055" style="background:#e17055;" title="Orange"></button>
+          <button class="accent-swatch" data-color="#fdcb6e" style="background:#fdcb6e;" title="Jaune"></button>
+        </div>
+        <div class="color-picker-widget" id="acc-cpw">
+          <div class="cp-satval-wrap">
+            <canvas class="cp-satval" id="acc-cp-satval" width="260" height="140"></canvas>
+            <div class="cp-cursor" id="acc-cp-cursor"></div>
+          </div>
+          <div class="cp-hue-wrap">
+            <canvas class="cp-hue" id="acc-cp-hue" width="260" height="14"></canvas>
+            <div class="cp-hue-cursor" id="acc-cp-hue-cursor"></div>
+          </div>
+          <div class="cp-preview-row">
+            <div class="cp-preview-swatch" id="acc-cp-preview"></div>
+            <span class="cp-hex-label" id="acc-cp-hex">#6C5CE7</span>
+          </div>
+        </div>
+        <button id="accent-reset-btn" class="btn-ghost settings-action-btn" style="margin-top:0.5rem;">
+          ↩ Réinitialiser (violet)
+        </button>
+      </section>
+    </div>
+  </aside>
+
+  <script src="app.js"></script>
+
+</body>
 </html>
