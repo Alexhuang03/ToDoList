@@ -807,7 +807,44 @@ function bindMissionEvents() {
       if (saved) return; saved = true;
       const val = input.value.trim();
       if (val && val !== current) {
-        currentFile.sections.forEach(s => { const m = s.missions.find(x => x.id === mid); if (m) m.text = val; });
+        const hashMatch = val.match(/#(\S+)/);
+        let sectionName = null;
+        let cleanText = val;
+        if (hashMatch) {
+          sectionName = hashMatch[1];
+          cleanText = val.replace(/#\S+/g, '').trim();
+        }
+
+        let foundMission = null;
+        let currentSec = null;
+        currentFile.sections.forEach(s => {
+          const m = s.missions.find(x => x.id === mid);
+          if (m) {
+            foundMission = m;
+            currentSec = s;
+          }
+        });
+
+        if (foundMission) {
+          foundMission.text = cleanText;
+          if (sectionName && sectionName.toLowerCase() !== currentSec.name.toLowerCase()) {
+            // Retirer de l'ancienne section
+            const idx = currentSec.missions.findIndex(x => x.id === mid);
+            if (idx !== -1) currentSec.missions.splice(idx, 1);
+
+            // Ajouter à la nouvelle section
+            let targetSec = currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
+            if (!targetSec) {
+              targetSec = { name: sectionName, missions: [] };
+              currentFile.sections.push(targetSec);
+            }
+            targetSec.missions.push(foundMission);
+          }
+        }
+
+        // Nettoyer les sections vides
+        currentFile.sections = currentFile.sections.filter(s => s.missions.length > 0);
+
         await saveFile();
       }
       renderSections();
