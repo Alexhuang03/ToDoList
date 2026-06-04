@@ -59,8 +59,89 @@ function toast(msg) {
 }
 
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Instant switch — used only at first load / init, no animation
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active', 'anim-enter-up', 'anim-enter-left', 'anim-enter-right',
+                        'anim-exit-down', 'anim-exit-left', 'anim-exit-right');
+  });
   $(`#${id}`).classList.add('active');
+}
+
+let _transitioning = false;
+
+/**
+ * Animated screen transition.
+ * @param {string} toId    — ID of the target screen
+ * @param {string} direction — 'up' | 'left' | 'right' | 'down' (describes the visual movement)
+ *   - 'up'    : auth → home  (new page rises from bottom)
+ *   - 'left'  : home → file  (new page enters from right, old exits left)
+ *   - 'right' : file → home  (new page enters from left, old exits right)
+ *   - 'down'  : home → auth  (logout, old page drops down)
+ */
+function transitionTo(toId, direction) {
+  if (_transitioning) return;
+
+  const currentScreen = document.querySelector('.screen.active');
+  const nextScreen = $(`#${toId}`);
+
+  // Same screen or no current — instant switch
+  if (!currentScreen || currentScreen === nextScreen) {
+    showScreen(toId);
+    return;
+  }
+
+  _transitioning = true;
+  document.body.classList.add('screen-transitioning');
+
+  // Determine animation class pairs
+  const exitMap  = { up: 'anim-exit-down',  left: 'anim-exit-left', right: 'anim-exit-right', down: 'anim-exit-down'  };
+  const enterMap = { up: 'anim-enter-up',   left: 'anim-enter-left', right: 'anim-enter-right', down: 'anim-enter-up' };
+
+  const exitClass  = exitMap[direction]  || 'anim-exit-left';
+  const enterClass = enterMap[direction] || 'anim-enter-left';
+
+  // Clean any leftover animation classes
+  const allAnimClasses = ['anim-enter-up', 'anim-enter-left', 'anim-enter-right',
+                          'anim-exit-down', 'anim-exit-left', 'anim-exit-right'];
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove(...allAnimClasses));
+
+  // Show next screen and animate it in
+  nextScreen.classList.add('active');
+  nextScreen.classList.add(enterClass);
+
+  // Animate current screen out
+  currentScreen.classList.add(exitClass);
+
+  const cleanup = () => {
+    currentScreen.classList.remove('active', ...allAnimClasses);
+    nextScreen.classList.remove(...allAnimClasses);
+    document.body.classList.remove('screen-transitioning');
+    _transitioning = false;
+  };
+
+  // When the enter animation ends, clean up everything
+  let cleaned = false;
+  const onEnterEnd = () => {
+    if (cleaned) return;
+    cleaned = true;
+    nextScreen.removeEventListener('animationend', onEnterEnd);
+    currentScreen.removeEventListener('animationend', onExitEnd);
+    cleanup();
+  };
+  const onExitEnd = () => {
+    currentScreen.removeEventListener('animationend', onExitEnd);
+    // Exit finished but enter might still be going — do nothing, let enter handle it
+  };
+  currentScreen.addEventListener('animationend', onExitEnd);
+  nextScreen.addEventListener('animationend', onEnterEnd);
+
+  // Safety timeout
+  setTimeout(() => {
+    if (!cleaned) {
+      cleaned = true;
+      cleanup();
+    }
+  }, 600);
 }
 
 function setLoading(btnId, loading) {
@@ -122,7 +203,7 @@ $('#logout-btn').addEventListener('click', () => {
   if (applyWallpaper) applyWallpaper({ type: 'default' }, false);
   if (applyAccent) applyAccent('#6C5CE7', false);
   applyTheme(localStorage.getItem('tdl_theme') || 'dark', false);
-  showScreen('auth-screen');
+  transitionTo('auth-screen', 'down');
 });
 
 function enterApp() {
@@ -165,7 +246,7 @@ function enterApp() {
   }
 
   renderHome();
-  showScreen('home-screen');
+  transitionTo('home-screen', 'up');
 }
 
 /* ===== FORGOT PASSWORD ===== */
@@ -417,9 +498,9 @@ function renderSharedUsers(f) {
 /* ===== TRASH ===== */
 async function openTrash() {
   await renderTrash();
-  showScreen('trash-screen');
+  transitionTo('trash-screen', 'left');
 }
-$('#trash-back-btn').addEventListener('click', () => { showScreen('home-screen'); renderHome(); });
+$('#trash-back-btn').addEventListener('click', () => { transitionTo('home-screen', 'right'); renderHome(); });
 
 $('#empty-trash-btn').addEventListener('click', async () => {
   try {
@@ -472,7 +553,7 @@ function openFile(f) {
     ? "Nouvelle mission... ajoutez #section pour trier, @membre pour assigner"
     : "Nouvelle mission... ajoutez #section pour trier";
   renderSections();
-  showScreen('file-screen');
+  transitionTo('file-screen', 'left');
   setTimeout(() => $('#quick-entry').focus(), 100);
   startPolling();
 }
@@ -525,7 +606,7 @@ $('#back-btn').addEventListener('click', () => {
   stopPolling();
   currentFile = null;
   renderHome();
-  showScreen('home-screen');
+  transitionTo('home-screen', 'right');
 });
 
 async function saveFile() {
@@ -1548,7 +1629,7 @@ $('#theme-toggle').addEventListener('click', () => {
     // Logout then redirect to forgot password form
     localStorage.removeItem('tdl_token');
     currentUser = null;
-    showScreen('auth-screen');
+    transitionTo('auth-screen', 'down');
     // Trigger the forgot-password form
     setTimeout(() => {
       $('#login-form').classList.add('hidden');
@@ -1580,7 +1661,7 @@ $('#theme-toggle').addEventListener('click', () => {
       localStorage.removeItem('tdl_accent');
       currentUser = null;
       closeSettings();
-      showScreen('auth-screen');
+      transitionTo('auth-screen', 'down');
       toast('Compte supprimé.');
     } catch (err) {
       errEl.textContent = err.message;

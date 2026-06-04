@@ -127,8 +127,94 @@ body {
 }
 
 /* ===== SCREENS ===== */
-.screen { display: none; min-height: 100vh; }
-.screen.active { display: flex; }
+.screen {
+  display: none;
+  min-height: 100vh;
+  width: 100%;
+  will-change: transform, opacity;
+}
+.screen.active {
+  display: flex;
+}
+
+/* During animation: screens must overlay each other, not stack */
+.screen[class*="anim-exit"],
+.screen[class*="anim-enter"] {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  background: var(--bg);
+}
+.screen[class*="anim-exit"]  { z-index: 10; }
+.screen[class*="anim-enter"] { z-index: 11; }
+
+/* Lock body scroll during transition */
+body.screen-transitioning { overflow: hidden; }
+
+/* ── Transition keyframes ── */
+/* Slide UP: auth → home (new page rises from the bottom) */
+@keyframes screenSlideInUp {
+  from { transform: translateY(30%); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+@keyframes screenSlideOutDown {
+  from { transform: translateY(0);   opacity: 1; }
+  to   { transform: translateY(30%); opacity: 0; }
+}
+
+/* Slide LEFT: home → file (new page enters from right) */
+@keyframes screenSlideInLeft {
+  from { transform: translateX(25%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+@keyframes screenSlideOutLeft {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(-25%); opacity: 0; }
+}
+
+/* Slide RIGHT: file → home (new page enters from left) */
+@keyframes screenSlideInRight {
+  from { transform: translateX(-25%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes screenSlideOutRight {
+  from { transform: translateX(0);   opacity: 1; }
+  to   { transform: translateX(25%); opacity: 0; }
+}
+
+/* Generic fade for reduced motion */
+@keyframes screenFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes screenFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Transition classes — enter */
+.screen.anim-enter-up    { animation: screenSlideInUp    0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.screen.anim-enter-left  { animation: screenSlideInLeft  0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.screen.anim-enter-right { animation: screenSlideInRight 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Transition classes — exit */
+.screen.anim-exit-down   { animation: screenSlideOutDown  0.35s cubic-bezier(0.55, 0, 1, 0.45) both; }
+.screen.anim-exit-left   { animation: screenSlideOutLeft  0.35s cubic-bezier(0.55, 0, 1, 0.45) both; }
+.screen.anim-exit-right  { animation: screenSlideOutRight 0.35s cubic-bezier(0.55, 0, 1, 0.45) both; }
+
+/* Accessibility: replace movement with simple fades */
+@media (prefers-reduced-motion: reduce) {
+  .screen.anim-enter-up,
+  .screen.anim-enter-left,
+  .screen.anim-enter-right { animation-name: screenFadeIn;  animation-duration: 0.25s; }
+
+  .screen.anim-exit-down,
+  .screen.anim-exit-left,
+  .screen.anim-exit-right  { animation-name: screenFadeOut; animation-duration: 0.2s; }
+}
 
 /* ===== AUTH SCREEN ===== */
 #auth-screen {
