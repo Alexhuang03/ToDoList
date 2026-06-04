@@ -845,7 +845,7 @@ function renderMission(m, secName) {
   const mClass = dateBadgeClass(m.dueDate, m.done);
   const dateBadge = m.done 
     ? `<span class="mission-date done"> Fait le ${formatDate(m.completedAt || new Date())}</span>`
-    : (m.dueDate ? `<span class="mission-date ${mClass}">${dateBadgeEmoji(mClass)} ${formatDate(m.dueDate)}</span>` : '');
+    : (m.dueDate ? `<span class="mission-date ${mClass}" data-datepick="${m.id}" style="cursor: pointer;" title="Modifier ou supprimer la date">${dateBadgeEmoji(mClass)} ${formatDate(m.dueDate)}</span>` : '');
   const mDueDateStr = m.dueDate ? new Date(m.dueDate).toISOString().split('T')[0] : '';
 
   let teamworkBadge = '';
@@ -876,7 +876,7 @@ function renderMission(m, secName) {
       const stClass = dateBadgeClass(st.dueDate, st.done);
       const stDateBadge = st.done
         ? `<span class="subtask-date done"> Fait le ${formatDate(st.completedAt || new Date())}</span>`
-        : (st.dueDate ? `<span class="subtask-date ${stClass}">${dateBadgeEmoji(stClass)} ${formatDate(st.dueDate)}</span>` : '');
+        : (st.dueDate ? `<span class="subtask-date ${stClass}" data-stdatepick="${st.id}" data-mid="${m.id}" data-maxdate="${mDueDateStr}" style="cursor: pointer;" title="Modifier ou supprimer la date">${dateBadgeEmoji(stClass)} ${formatDate(st.dueDate)}</span>` : '');
       
       const stAssigneeBadge = st.assignedTo
         ? `<span class="subtask-assignee" data-stassign="${st.id}" data-mid="${m.id}" title="Assigné à @${esc(st.assignedTo)}">@${esc(st.assignedTo)}</span>`
