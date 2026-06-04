@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   wallpaper: { type: String, default: null },
   accent: { type: String, default: null },
   theme: { type: String, default: 'dark' },
+  language: { type: String, default: 'en' },
 }, { timestamps: true });
 
 // Hash du mot de passe avant sauvegarde

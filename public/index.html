@@ -24,73 +24,72 @@
             style="width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto;">
         </div>
         <h1>ToDoList</h1>
-        <p class="auth-subtitle">Organisez vos missions avec simplicité</p>
+        <p class="auth-subtitle">Organize your tasks with simplicity</p>
       </div>
 
       <!-- LOGIN FORM -->
       <form id="login-form" class="auth-form" autocomplete="off">
-        <h2>Connexion</h2>
+        <h2>Login</h2>
         <div class="input-group">
-          <label for="login-email">Adresse e-mail</label>
-          <input type="email" id="login-email" placeholder="vous@exemple.com" required>
+          <label for="login-email">Email Address</label>
+          <input type="email" id="login-email" placeholder="you@example.com" required>
         </div>
         <div class="input-group">
-          <label for="login-password">Mot de passe</label>
+          <label for="login-password">Password</label>
           <input type="password" id="login-password" placeholder="••••••••" required>
         </div>
-        <button type="submit" class="btn-primary" id="login-btn">Se connecter</button>
-        <p class="auth-switch">Pas encore de compte ? <a href="#" id="show-register">Créer un compte</a></p>
-        <p class="auth-switch"><a href="#" id="show-forgot" class="auth-forgot">Mot de passe oublié ?</a></p>
+        <button type="submit" class="btn-primary" id="login-btn">Login</button>
+        <p class="auth-switch"><span>Don't have an account?</span> <a href="#" id="show-register">Sign Up</a></p>
+        <p class="auth-switch"><a href="#" id="show-forgot" class="auth-forgot">Forgot Password?</a></p>
         <p id="login-error" class="auth-error"></p>
       </form>
 
       <!-- REGISTER FORM -->
       <form id="register-form" class="auth-form hidden" autocomplete="off">
-        <h2>Créer un compte</h2>
+        <h2>Create an Account</h2>
         <div class="input-group">
-          <label for="register-name">Nom complet</label>
-          <input type="text" id="register-name" placeholder="Jean Dupont" required>
+          <label for="register-name">Full Name</label>
+          <input type="text" id="register-name" placeholder="John Doe" required>
         </div>
         <div class="input-group">
-          <label for="register-email">Adresse e-mail</label>
-          <input type="email" id="register-email" placeholder="vous@exemple.com" required>
+          <label for="register-email">Email Address</label>
+          <input type="email" id="register-email" placeholder="you@example.com" required>
         </div>
         <div class="input-group">
-          <label for="register-password">Mot de passe</label>
-          <input type="password" id="register-password" placeholder="Minimum 6 caractères" required minlength="6">
+          <label for="register-password">Password</label>
+          <input type="password" id="register-password" placeholder="At least 6 characters" required minlength="6">
         </div>
-        <button type="submit" class="btn-primary" id="register-btn">Créer mon compte</button>
-        <p class="auth-switch">Déjà un compte ? <a href="#" id="show-login">Se connecter</a></p>
+        <button type="submit" class="btn-primary" id="register-btn">Create my account</button>
+        <p class="auth-switch"><span>Already have an account?</span> <a href="#" id="show-login">Login</a></p>
         <p id="register-error" class="auth-error"></p>
       </form>
 
       <!-- FORGOT PASSWORD FORM -->
       <form id="forgot-form" class="auth-form hidden" autocomplete="off">
-        <h2>Mot de passe oublié</h2>
-        <p class="auth-desc">Entrez votre adresse e-mail. Vous recevrez un lien pour réinitialiser votre mot de passe.
-        </p>
+        <h2>Forgot Password</h2>
+        <p class="auth-desc">Enter your email address and we'll send you a link to reset your password.</p>
         <div class="input-group">
-          <label for="forgot-email">Adresse e-mail</label>
-          <input type="email" id="forgot-email" placeholder="vous@exemple.com" required>
+          <label for="forgot-email">Email Address</label>
+          <input type="email" id="forgot-email" placeholder="you@example.com" required>
         </div>
-        <button type="submit" class="btn-primary" id="forgot-btn">Envoyer le lien</button>
-        <p class="auth-switch"><a href="#" id="forgot-back">← Retour à la connexion</a></p>
+        <button type="submit" class="btn-primary" id="forgot-btn">Send Link</button>
+        <p class="auth-switch"><a href="#" id="forgot-back">← Back to Login</a></p>
         <p id="forgot-msg" class="auth-error"></p>
       </form>
 
       <!-- RESET PASSWORD FORM -->
       <form id="reset-form" class="auth-form hidden" autocomplete="off">
-        <h2>Nouveau mot de passe</h2>
-        <p class="auth-desc">Choisissez un nouveau mot de passe pour votre compte.</p>
+        <h2>New Password</h2>
+        <p class="auth-desc">Choose a new password for your account.</p>
         <div class="input-group">
-          <label for="reset-password">Nouveau mot de passe</label>
-          <input type="password" id="reset-password" placeholder="Minimum 6 caractères" required minlength="6">
+          <label for="reset-password">New Password</label>
+          <input type="password" id="reset-password" placeholder="At least 6 characters" required minlength="6">
         </div>
         <div class="input-group">
-          <label for="reset-confirm">Confirmer le mot de passe</label>
-          <input type="password" id="reset-confirm" placeholder="Répétez le mot de passe" required minlength="6">
+          <label for="reset-confirm">Confirm Password</label>
+          <input type="password" id="reset-confirm" placeholder="Repeat password" required minlength="6">
         </div>
-        <button type="submit" class="btn-primary" id="reset-btn">Réinitialiser le mot de passe</button>
+        <button type="submit" class="btn-primary" id="reset-btn">Reset Password</button>
         <p id="reset-msg" class="auth-error"></p>
       </form>
     </div>
@@ -116,7 +115,7 @@
       </div>
       <div class="header-right">
         <span id="user-greeting" class="user-greeting"></span>
-        <button id="theme-toggle" class="btn-ghost theme-toggle" title="Changer de thème">
+        <button id="theme-toggle" class="btn-ghost theme-toggle" title="Changer de thème" data-i18n-title="theme_light">
           <svg id="theme-icon-sun" class="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
             <circle cx="12" cy="12" r="5" />
@@ -134,14 +133,14 @@
             <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
           </svg>
         </button>
-        <button id="settings-btn" class="btn-ghost" title="Paramètres">
+        <button id="settings-btn" class="btn-ghost" title="Paramètres" data-i18n-title="settings_title">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
           </svg>
         </button>
-        <button id="logout-btn" class="btn-ghost" title="Déconnexion">
+        <button id="logout-btn" class="btn-ghost" title="Déconnexion" data-i18n-title="logout_title">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
@@ -154,8 +153,8 @@
 
     <main class="home-main">
       <div class="home-title-row">
-        <h1>Mes Fichiers</h1>
-        <button id="add-file-btn" class="btn-add" title="Nouveau fichier">
+        <h1 data-i18n="my_files">Mes Fichiers</h1>
+        <button id="add-file-btn" class="btn-add" title="Nouveau fichier" data-i18n-title="new_file_modal_title">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
             stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19" />
@@ -171,7 +170,7 @@
   <div id="file-screen" class="screen">
     <header class="app-header">
       <div class="header-left">
-        <button id="back-btn" class="btn-ghost" title="Retour">
+        <button id="back-btn" class="btn-ghost" title="Retour" data-i18n-title="back_btn_title">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12" />
@@ -196,7 +195,7 @@
       <div class="quick-entry-wrapper">
         <div id="quick-entry-ghost" class="quick-entry-ghost" aria-hidden="true"></div>
         <input type="text" id="quick-entry" class="quick-entry"
-          placeholder="Nouvelle mission... ajoutez #section pour trier" autocomplete="off">
+          placeholder="Nouvelle mission... ajoutez #section pour trier" autocomplete="off" data-i18n-placeholder="quick_entry_private">
         <kbd class="kbd-hint">Entrée</kbd>
         <kbd id="tab-hint" class="kbd-hint tab-hint" style="display:none;">Tab ↹</kbd>
       </div>
@@ -212,9 +211,9 @@
             <polyline points="10 9 9 9 8 9" />
           </svg>
         </div>
-        <p>Entrez votre mission et ajoutez <strong>#section</strong> afin que les tâches puissent être triées
+        <p data-i18n-html="empty_state_text">Entrez votre mission et ajoutez <strong>#section</strong> afin que les tâches puissent être triées
           automatiquement.</p>
-        <p class="empty-example">Exemple : <code>Rédiger le rapport #Travail</code></p>
+        <p class="empty-example" data-i18n-html="empty_state_example">Exemple : <code>Rédiger le rapport #Travail</code></p>
       </div>
     </main>
   </div>
@@ -223,17 +222,17 @@
   <div id="trash-screen" class="screen">
     <header class="app-header">
       <div class="header-left">
-        <button id="trash-back-btn" class="btn-ghost" title="Retour">
+        <button id="trash-back-btn" class="btn-ghost" title="Retour" data-i18n-title="back_btn_title">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12" />
             <polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
-        <h2 class="file-title-header">🗑️ Corbeille</h2>
+        <h2 class="file-title-header" data-i18n="trash_title">🗑️ Corbeille</h2>
       </div>
       <div class="header-right">
-        <button id="empty-trash-btn" class="btn-danger" title="Vider la corbeille">Vider la corbeille</button>
+        <button id="empty-trash-btn" class="btn-danger" title="Vider la corbeille" data-i18n="empty_trash_btn" data-i18n-title="empty_trash_btn">Vider la corbeille</button>
       </div>
     </header>
     <main class="file-main">
@@ -246,7 +245,7 @@
             <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
           </svg>
         </div>
-        <p>La corbeille est vide.</p>
+        <p data-i18n="trash_empty">La corbeille est vide.</p>
       </div>
     </main>
   </div>
@@ -255,13 +254,13 @@
   <!-- New File Modal -->
   <div id="modal-overlay" class="modal-overlay">
     <div class="modal" id="new-file-modal">
-      <h3>Nouveau fichier</h3>
+      <h3 data-i18n="new_file_modal_title">Nouveau fichier</h3>
       <div class="input-group">
-        <label for="new-file-name">Nom du fichier</label>
-        <input type="text" id="new-file-name" placeholder="Mon projet..." autofocus>
+        <label for="new-file-name" data-i18n="file_name_label">Nom du fichier</label>
+        <input type="text" id="new-file-name" placeholder="Mon projet..." autofocus data-i18n-placeholder="file_name_placeholder">
       </div>
       <div class="input-group">
-        <label>Icône (optionnel)</label>
+        <label data-i18n="icon_label">Icône (optionnel)</label>
         <div class="emoji-picker" id="emoji-picker">
           <button type="button" class="emoji-opt" data-emoji="">—</button>
           <button type="button" class="emoji-opt" data-emoji="📁">📁</button>
@@ -286,8 +285,8 @@
         </div>
       </div>
       <div class="modal-actions">
-        <button class="btn-ghost" id="modal-cancel">Annuler</button>
-        <button class="btn-primary" id="modal-confirm">Créer</button>
+        <button class="btn-ghost" id="modal-cancel" data-i18n="cancel">Annuler</button>
+        <button class="btn-primary" id="modal-confirm" data-i18n="create">Créer</button>
       </div>
     </div>
   </div>
@@ -295,13 +294,13 @@
   <!-- Edit File Modal -->
   <div id="edit-modal-overlay" class="modal-overlay">
     <div class="modal" id="edit-file-modal">
-      <h3>Modifier le fichier</h3>
+      <h3 data-i18n="edit_file_modal_title">Modifier le fichier</h3>
       <div class="input-group">
-        <label for="edit-file-name">Nom du fichier</label>
-        <input type="text" id="edit-file-name" placeholder="Mon projet...">
+        <label for="edit-file-name" data-i18n="file_name_label">Nom du fichier</label>
+        <input type="text" id="edit-file-name" placeholder="Mon projet..." data-i18n-placeholder="file_name_placeholder">
       </div>
       <div class="input-group">
-        <label>Icône</label>
+        <label data-i18n="icon_label_edit">Icône</label>
         <div class="emoji-picker" id="edit-emoji-picker">
           <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="">—</button>
           <button type="button" class="edit-emoji-opt emoji-opt" data-emoji="📁">📁</button>
@@ -326,8 +325,8 @@
         </div>
       </div>
       <div class="modal-actions">
-        <button class="btn-ghost" id="edit-modal-cancel">Annuler</button>
-        <button class="btn-primary" id="edit-modal-confirm">Enregistrer</button>
+        <button class="btn-ghost" id="edit-modal-cancel" data-i18n="cancel">Annuler</button>
+        <button class="btn-primary" id="edit-modal-confirm" data-i18n="save">Enregistrer</button>
       </div>
     </div>
   </div>
@@ -335,18 +334,18 @@
   <!-- Share Modal -->
   <div id="share-overlay" class="modal-overlay">
     <div class="modal" id="share-modal">
-      <h3>Partager le fichier</h3>
+      <h3 data-i18n="share_title">Partager le fichier</h3>
       <p class="share-file-name" id="share-file-name"></p>
       <div class="input-group">
-        <label for="share-email">Adresse e-mail</label>
+        <label for="share-email" data-i18n="email_label">Adresse e-mail</label>
         <div class="share-input-row">
-          <input type="email" id="share-email" placeholder="collaborateur@exemple.com">
-          <button class="btn-primary btn-sm" id="share-add-btn">Inviter</button>
+          <input type="email" id="share-email" placeholder="collaborateur@exemple.com" data-i18n-placeholder="email_placeholder">
+          <button class="btn-primary btn-sm" id="share-add-btn" data-i18n="invite">Inviter</button>
         </div>
       </div>
       <div id="shared-users-list" class="shared-users-list"></div>
       <div class="modal-actions">
-        <button class="btn-ghost" id="share-close">Fermer</button>
+        <button class="btn-ghost" id="share-close" data-i18n="close">Fermer</button>
       </div>
     </div>
   </div>
@@ -363,9 +362,9 @@
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
         </svg>
-        Paramètres
+        <span data-i18n="settings_title">Paramètres</span>
       </h2>
-      <button id="settings-close" class="btn-ghost settings-close-btn" title="Fermer">
+      <button id="settings-close" class="btn-ghost settings-close-btn" title="Fermer" data-i18n-title="close">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -373,36 +372,36 @@
     <div class="settings-body">
       <!-- PROFIL -->
       <section class="settings-section">
-        <h3 class="settings-section-title">👤 Profil</h3>
+        <h3 class="settings-section-title" data-i18n="profile_title">👤 Profil</h3>
         <div class="input-group">
-          <label for="settings-name">Nom d'affichage</label>
+          <label for="settings-name" data-i18n="display_name_label">Nom d'affichage</label>
           <div style="display:flex;gap:0.5rem;">
-            <input type="text" id="settings-name" placeholder="Votre nom" autocomplete="off">
-            <button id="settings-save-name" class="btn-primary" style="white-space:nowrap;padding:0 1rem;">Sauvegarder</button>
+            <input type="text" id="settings-name" placeholder="Votre nom" autocomplete="off" data-i18n-placeholder="name_placeholder">
+            <button id="settings-save-name" class="btn-primary" style="white-space:nowrap;padding:0 1rem;" data-i18n="save_btn">Sauvegarder</button>
           </div>
         </div>
         <div class="input-group">
-          <label>Adresse e-mail</label>
+          <label data-i18n="email_label">Adresse e-mail</label>
           <p id="settings-email" class="settings-readonly-field"></p>
         </div>
         <button id="settings-change-pwd" class="btn-ghost settings-action-btn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          Changer le mot de passe
+          <span data-i18n="change_pwd_btn">Changer le mot de passe</span>
         </button>
         <div id="delete-account-section" class="delete-account-section">
           <button id="delete-account-btn" class="btn-danger-outline settings-action-btn">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-            Supprimer mon compte
+            <span data-i18n="delete_account_btn">Supprimer mon compte</span>
           </button>
           <div id="delete-confirm-box" class="delete-confirm-box" style="display:none;">
-            <p class="delete-confirm-warning">⚠️ Cette action est <strong>irréversible</strong>. Tous vos fichiers seront supprimés.</p>
+            <p class="delete-confirm-warning" data-i18n-html="delete_warning">⚠️ Cette action est <strong>irréversible</strong>. Tous vos fichiers seront supprimés.</p>
             <div class="input-group">
-              <label for="delete-password">Confirmez avec votre mot de passe</label>
-              <input type="password" id="delete-password" placeholder="Mot de passe actuel" autocomplete="current-password">
+              <label for="delete-password" data-i18n="delete_pwd_confirm">Confirmez avec votre mot de passe</label>
+              <input type="password" id="delete-password" placeholder="Mot de passe actuel" autocomplete="current-password" data-i18n-placeholder="password_placeholder">
             </div>
             <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
-              <button id="delete-confirm-btn" class="btn-danger" style="flex:1;">Supprimer définitivement</button>
-              <button id="delete-cancel-btn" class="btn-ghost" style="flex:1;">Annuler</button>
+              <button id="delete-confirm-btn" class="btn-danger" style="flex:1;" data-i18n="delete_confirm_btn">Supprimer définitivement</button>
+              <button id="delete-cancel-btn" class="btn-ghost" style="flex:1;" data-i18n="cancel">Annuler</button>
             </div>
             <p id="delete-error" class="auth-error"></p>
           </div>
@@ -411,22 +410,22 @@
 
       <!-- FOND D'ÉCRAN -->
       <section class="settings-section">
-        <h3 class="settings-section-title">🖼️ Fond d'écran</h3>
+        <h3 class="settings-section-title" data-i18n="wallpaper_title">🖼️ Fond d'écran</h3>
         <div class="wallpaper-options">
           <label class="wallpaper-option" id="wp-opt-default">
             <input type="radio" name="wallpaper" value="default" checked>
             <span class="wallpaper-option-preview" style="background:url('cat-todolist.jpeg') center/cover;"></span>
-            <span>Original</span>
+            <span data-i18n="wp_original">Original</span>
           </label>
           <label class="wallpaper-option" id="wp-opt-color">
             <input type="radio" name="wallpaper" value="color">
             <span class="wallpaper-option-preview" id="wp-color-preview" style="background:#1a1a30;"></span>
-            <span>Couleur unie</span>
+            <span data-i18n="wp_color">Couleur unie</span>
           </label>
           <label class="wallpaper-option" id="wp-opt-image">
             <input type="radio" name="wallpaper" value="image">
             <span class="wallpaper-option-preview" id="wp-image-preview" style="background:var(--bg-card);display:flex;align-items:center;justify-content:center;font-size:1.4rem;">📁</span>
-            <span>Image perso</span>
+            <span data-i18n="wp_image">Image perso</span>
           </label>
         </div>
         <div id="wp-color-row" class="color-picker-row" style="display:none;">
@@ -465,15 +464,15 @@
           </div>
         </div>
         <div id="wp-image-row" class="settings-sub-row" style="display:none;">
-          <button id="wp-upload-btn" class="btn-ghost settings-action-btn">📂 Importer une image (max 2 Mo)</button>
+          <button id="wp-upload-btn" class="btn-ghost settings-action-btn" data-i18n="wp_image_btn">📂 Importer une image (max 2 Mo)</button>
           <input type="file" id="wallpaper-file-input" accept="image/*" style="display:none;">
         </div>
       </section>
 
       <!-- COULEUR D'ACCENTUATION -->
       <section class="settings-section">
-        <h3 class="settings-section-title">🎨 Couleur d'accentuation</h3>
-        <p class="settings-hint">Remplace le violet sur les boutons et les badges.</p>
+        <h3 class="settings-section-title" data-i18n="accent_title">🎨 Couleur d'accentuation</h3>
+        <p class="settings-hint" data-i18n="accent_hint">Remplace le violet sur les boutons et les badges.</p>
         <div class="accent-presets">
           <button class="accent-swatch" data-color="#6C5CE7" style="background:#6C5CE7;" title="Violet (défaut)"></button>
           <button class="accent-swatch" data-color="#e84393" style="background:#e84393;" title="Rose"></button>
@@ -515,9 +514,23 @@
             </div>
           </div>
         </div>
-        <button id="accent-reset-btn" class="btn-ghost settings-action-btn" style="margin-top:0.5rem;">
+        <button id="accent-reset-btn" class="btn-ghost settings-action-btn" style="margin-top:0.5rem;" data-i18n="accent_reset">
           ↩ Réinitialiser (violet)
         </button>
+      </section>
+
+      <!-- LANGUE / LANGUAGE -->
+      <section class="settings-section">
+        <h3 class="settings-section-title" data-i18n="lang_title">🌐 Langue / Language</h3>
+        <div class="input-group">
+          <label for="settings-lang" data-i18n="lang_label">Langue de l'application</label>
+          <select id="settings-lang" class="settings-select-field">
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+            <option value="ru">Русский</option>
+          </select>
+        </div>
       </section>
     </div>
   </aside>

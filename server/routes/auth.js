@@ -154,7 +154,7 @@ router.post('/reset-password/:token', async (req, res) => {
 // PATCH /api/auth/me — Modifier le profil (nom, fond d'écran, couleur d'accentuation, thème)
 router.patch('/me', authMiddleware, async (req, res) => {
   try {
-    const { name, wallpaper, accent, theme } = req.body;
+    const { name, wallpaper, accent, theme, language } = req.body;
     const updates = {};
     if (name !== undefined) {
       if (!name || !name.trim()) return res.status(400).json({ error: 'Nom requis' });
@@ -163,6 +163,7 @@ router.patch('/me', authMiddleware, async (req, res) => {
     if (wallpaper !== undefined) updates.wallpaper = wallpaper;
     if (accent !== undefined) updates.accent = accent;
     if (theme !== undefined) updates.theme = theme;
+    if (language !== undefined) updates.language = language;
 
     const user = await User.findByIdAndUpdate(req.userId, updates, { new: true });
     res.json({ user });

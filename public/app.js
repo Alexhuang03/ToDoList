@@ -22,6 +22,46 @@ let pollInterval = null;
 const expandedMissions = new Set();
 let applyWallpaper = null;
 let applyAccent = null;
+let currentLanguage = 'en';
+const LANGUAGES = {};
+
+async function loadLanguageXml(lang) {
+  if (LANGUAGES[lang]) return LANGUAGES[lang];
+  try {
+    const res = await fetch(`/locales/${lang}.xml`);
+    if (!res.ok) throw new Error(`Could not load translations for ${lang}`);
+    const xmlText = await res.text();
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+    const parserError = xmlDoc.querySelector('parsererror');
+    if (parserError) {
+      throw new Error(`XML parsing error: ${parserError.textContent}`);
+    }
+    const entries = xmlDoc.getElementsByTagName('entry');
+    const dict = {};
+    for (let i = 0; i < entries.length; i++) {
+      const key = entries[i].getAttribute('key');
+      const val = entries[i].textContent;
+      dict[key] = val;
+    }
+    LANGUAGES[lang] = dict;
+    return dict;
+  } catch (err) {
+    console.error(err);
+    return {};
+  }
+}
+
+
+
+function t(key, ...args) {
+  const dict = LANGUAGES[currentLanguage] || LANGUAGES['en'] || {};
+  let text = dict[key] || (LANGUAGES['en'] && LANGUAGES['en'][key]) || key;
+  for (let i = 0; i < args.length; i++) {
+    text = text.replace(`{${i}}`, args[i]);
+  }
+  return text;
+}
 
 /* ===== HELPERS ===== */
 const $ = s => document.querySelector(s);
@@ -31,8 +71,81 @@ function esc(s) { const d = document.createElement('div'); d.textContent = s; re
 function formatDate(d) {
   if (!d) return '';
   const date = new Date(d);
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const locales = { fr: 'fr-FR', en: 'en-US', zh: 'zh-CN', ru: 'ru-RU' };
+  return date.toLocaleDateString(locales[currentLanguage] || 'fr-FR', { day: 'numeric', month: 'short' });
 }
+
+function updateQuickEntryPlaceholder() {
+  const qe = $('#quick-entry');
+  if (!qe) return;
+  if (currentFile) {
+    const isShared = currentFile.sharedWith && currentFile.sharedWith.length > 0;
+    qe.placeholder = isShared ? t('quick_entry_shared') : t('quick_entry_private');
+  } else {
+    qe.placeholder = t('quick_entry_private');
+  }
+}
+
+async function updateLanguage(lang) {
+  if (lang !== 'en' && lang !== 'fr' && lang !== 'zh' && lang !== 'ru') lang = 'en';
+  await loadLanguageXml(lang);
+  if (lang !== 'en') {
+    await loadLanguageXml('en');
+  }
+  currentLanguage = lang;
+  
+  if (currentUser) {
+    localStorage.setItem('tdl_lang_' + currentUser._id, lang);
+  }
+  
+  const select = $('#settings-lang');
+  if (select) select.value = lang;
+  
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+  
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.dataset.i18nHtml;
+    el.innerHTML = t(key);
+  });
+  
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.dataset.i18nTitle;
+    el.setAttribute('title', t(key));
+  });
+  
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    el.setAttribute('placeholder', t(key));
+  });
+  
+  if (currentUser) {
+    const greet = $('#user-greeting');
+    if (greet) {
+      if (currentLanguage === 'fr') greet.textContent = `Bonjour, ${currentUser.name}`;
+      else if (currentLanguage === 'en') greet.textContent = `Hello, ${currentUser.name}`;
+      else if (currentLanguage === 'zh') greet.textContent = `你好，${currentUser.name}`;
+      else if (currentLanguage === 'ru') greet.textContent = `Привет, ${currentUser.name}`;
+    }
+  }
+
+  updateQuickEntryPlaceholder();
+
+  // Re-render active screen to update dynamic content translations
+  const activeScreen = document.querySelector('.screen.active');
+  if (activeScreen) {
+    if (activeScreen.id === 'home-screen') {
+      renderHome().catch(console.error);
+    } else if (activeScreen.id === 'file-screen') {
+      renderSections();
+    } else if (activeScreen.id === 'trash-screen') {
+      renderTrash().catch(console.error);
+    }
+  }
+}
+
 function dateBadgeEmoji(cls) {
   if (cls === 'ok') return '😎';
   if (cls === 'warning') return '🤔';
@@ -206,8 +319,13 @@ $('#logout-btn').addEventListener('click', () => {
   transitionTo('auth-screen', 'down');
 });
 
-function enterApp() {
-  $('#user-greeting').textContent = `Bonjour, ${currentUser.name}`;
+async function enterApp() {
+  // Apply language settings for this user (cached locally or from DB)
+  let userLang = localStorage.getItem('tdl_lang_' + currentUser._id);
+  if (!userLang && currentUser.language) {
+    userLang = currentUser.language;
+  }
+  await updateLanguage(userLang || 'en');
 
   // Apply theme settings for this user (cached locally or from DB)
   let userTheme = localStorage.getItem('tdl_theme_' + currentUser._id);
@@ -260,7 +378,7 @@ $('#forgot-form').addEventListener('submit', async e => {
   try {
     const data = await API.post('/auth/forgot-password', { email });
     msgEl.style.color = 'var(--accent-light)';
-    msgEl.textContent = '✓ ' + data.message + ' Vérifiez votre boîte mail (et les spams).';
+    msgEl.textContent = '✓ ' + data.message + ' Please check your email (and spam folder).';
     $('#forgot-email').value = '';
   } catch (err) {
     msgEl.textContent = err.message;
@@ -276,9 +394,9 @@ $('#reset-form').addEventListener('submit', async e => {
   const msgEl = $('#reset-msg');
   msgEl.textContent = '';
   msgEl.style.color = '';
-  if (password !== confirm) { msgEl.textContent = 'Les mots de passe ne correspondent pas.'; return; }
+  if (password !== confirm) { msgEl.textContent = 'Passwords do not match.'; return; }
   const token = new URLSearchParams(window.location.search).get('reset_token');
-  if (!token) { msgEl.textContent = 'Token manquant. Recommencez la procédure.'; return; }
+  if (!token) { msgEl.textContent = 'Missing token. Please request a new password reset.'; return; }
   setLoading('reset-btn', true);
   try {
     const data = await API.post(`/auth/reset-password/${token}`, { password });
@@ -300,6 +418,7 @@ $('#reset-form').addEventListener('submit', async e => {
 
 /* ===== AUTO-LOGIN ===== */
 (async function init() {
+  await updateLanguage('en');
   // Détection du token de réinitialisation dans l'URL
   const resetToken = new URLSearchParams(window.location.search).get('reset_token');
   if (resetToken) {
@@ -312,7 +431,7 @@ $('#reset-form').addEventListener('submit', async e => {
   try {
     const data = await API.get('/auth/me');
     currentUser = data.user;
-    enterApp();
+    await enterApp();
   } catch {
     localStorage.removeItem('tdl_token');
     showScreen('auth-screen');
@@ -323,13 +442,13 @@ $('#reset-form').addEventListener('submit', async e => {
 async function renderHome() {
   stopPolling();
   const grid = $('#files-grid');
-  grid.innerHTML = '<div style="color:var(--text-dim);padding:2rem;text-align:center;">Chargement...</div>';
+  grid.innerHTML = `<div style="color:var(--text-dim);padding:2rem;text-align:center;">${t('loading')}</div>`;
   try {
     const { files } = await API.get('/files');
     const { trash } = await API.get('/trash');
     let html = `<div class="file-card trash-card" data-action="trash">
-      <div class="file-card-name">🗑️ Corbeille</div>
-      <div class="file-card-meta">${trash.length} élément(s)</div>
+      <div class="file-card-name">${t('trash_title')}</div>
+      <div class="file-card-meta">${t('items_count', trash.length)}</div>
     </div>`;
     files.forEach(f => {
       const total = countTasks(f), done = countDone(f);
@@ -337,12 +456,12 @@ async function renderHome() {
       const collab = f.sharedWith && f.sharedWith.length > 0 ? `👥 ${f.sharedWith.length + 1}` : '';
       html += `<div class="file-card" data-id="${f._id}">
         <div class="file-card-actions">
-          ${isOwner ? `<button class="icon-btn" data-edit="${f._id}" title="Modifier"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>` : ''}
-          ${isOwner ? `<button class="icon-btn" data-share="${f._id}" title="Partager"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>` : ''}
-          ${isOwner ? `<button class="icon-btn danger" data-delete="${f._id}" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>` : ''}
+          ${isOwner ? `<button class="icon-btn" data-edit="${f._id}" title="${t('edit')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>` : ''}
+          ${isOwner ? `<button class="icon-btn" data-share="${f._id}" title="${t('share')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>` : ''}
+          ${isOwner ? `<button class="icon-btn danger" data-delete="${f._id}" title="${t('delete')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>` : ''}
         </div>
         <div class="file-card-name">${f.emoji ? f.emoji + ' ' : ''}${esc(f.name)}${collab ? ` <span style="font-size:0.75rem;opacity:0.7;">${collab}</span>` : ''}</div>
-        <div class="file-card-meta">${total} mission(s) · ${done} terminée(s)</div>
+        <div class="file-card-meta">${t('missions_status', total, done)}</div>
       </div>`;
     });
     grid.innerHTML = html;
@@ -394,9 +513,9 @@ $('#modal-confirm').addEventListener('click', async () => {
   try {
     await API.post('/files', { name, emoji });
     $('#modal-overlay').classList.remove('active');
-    toast('Fichier créé !');
+    toast(t('file_created'));
     renderHome();
-  } catch (err) { toast(err.message); }
+  } catch (err) { toast(t('error_prefix') + err.message); }
 });
 $('#new-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#modal-confirm').click(); } });
 
@@ -434,9 +553,9 @@ $('#edit-modal-confirm').addEventListener('click', async () => {
   try {
     await API.put(`/files/${editFileId}`, { name, emoji });
     $('#edit-modal-overlay').classList.remove('active');
-    toast('Fichier modifié !');
+    toast(t('file_modified'));
     renderHome();
-  } catch (err) { toast(err.message); }
+  } catch (err) { toast(t('error_prefix') + err.message); }
 });
 $('#edit-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#edit-modal-confirm').click(); } });
 
@@ -444,9 +563,9 @@ $('#edit-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') {
 async function deleteFile(id) {
   try {
     await API.del(`/files/${id}`);
-    toast('Fichier supprimé');
+    toast(t('file_deleted'));
     renderHome();
-  } catch (err) { toast(err.message); }
+  } catch (err) { toast(t('error_prefix') + err.message); }
 }
 
 /* ===== SHARE MODAL ===== */
@@ -455,7 +574,7 @@ function openShareModal(fid, files) {
   shareFileId = fid;
   const f = files.find(x => x._id === fid);
   if (!f) return;
-  $('#share-file-name').textContent = `Fichier : ${f.name}`;
+  $('#share-file-name').textContent = t('file_prefix', f.name);
   $('#share-email').value = '';
   renderSharedUsers(f);
   $('#share-overlay').classList.add('active');
@@ -470,27 +589,27 @@ $('#share-add-btn').addEventListener('click', async () => {
     const { file } = await API.post(`/files/${shareFileId}/share`, { email });
     $('#share-email').value = '';
     renderSharedUsers(file);
-    toast(`Accès accordé à ${email}`);
+    toast(t('access_granted', email));
     renderHome();
-  } catch (err) { toast(err.message); }
+  } catch (err) { toast(t('error_prefix') + err.message); }
 });
 
 function renderSharedUsers(f) {
   const list = $('#shared-users-list');
   const shared = f.sharedWith || [];
-  if (shared.length === 0) { list.innerHTML = '<p style="color:var(--text-dim);font-size:0.82rem;">Aucun collaborateur pour le moment.</p>'; return; }
+  if (shared.length === 0) { list.innerHTML = `<p style="color:var(--text-dim);font-size:0.82rem;">${t('no_collaborators')}</p>`; return; }
   list.innerHTML = shared.map(u => {
     const uid = u._id || u;
     const label = u.name ? `${u.name} (${u.email})` : u.email || uid;
-    return `<div class="shared-user"><span class="shared-user-email">${esc(label)}</span><button class="icon-btn danger" data-remove-share="${uid}" title="Retirer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
+    return `<div class="shared-user"><span class="shared-user-email">${esc(label)}</span><button class="icon-btn danger" data-remove-share="${uid}" title="${t('remove')}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
   }).join('');
   list.querySelectorAll('[data-remove-share]').forEach(btn => {
     btn.addEventListener('click', async () => {
       try {
         const { file } = await API.del(`/files/${shareFileId}/share/${btn.dataset.removeShare}`);
         renderSharedUsers(file);
-        toast('Collaborateur retiré');
-      } catch (err) { toast(err.message); }
+        toast(t('collaborator_removed'));
+      } catch (err) { toast(t('error_prefix') + err.message); }
     });
   });
 }
@@ -505,9 +624,9 @@ $('#trash-back-btn').addEventListener('click', () => { transitionTo('home-screen
 $('#empty-trash-btn').addEventListener('click', async () => {
   try {
     await API.del('/trash');
-    toast('Corbeille vidée');
+    toast(t('trash_emptied'));
     renderTrash();
-  } catch (err) { toast(err.message); }
+  } catch (err) { toast(t('error_prefix') + err.message); }
 });
 
 async function renderTrash() {
@@ -521,23 +640,23 @@ async function renderTrash() {
       let label, origin;
       if (item.type === 'file') {
         label = `📁 ${esc(item.data.name)}`;
-        origin = 'Fichier supprimé';
+        origin = t('deleted_file_label');
       } else if (item.type === 'subtask') {
         label = `↳ ${esc(item.data.text)}`;
-        origin = `Sous-mission de : ${esc(item.origin || '')}`;
+        origin = t('subtask_origin_prefix', item.origin || '');
       } else {
         label = `✓ ${esc(item.data.text)}`;
-        origin = `De : ${esc(item.origin || '')}`;
+        origin = t('origin_prefix', item.origin || '');
       }
-      return `<div class="trash-item"><div class="trash-item-info"><span class="trash-item-name">${label}</span><span class="trash-item-origin">${origin}</span></div><button class="btn-restore" data-restore="${i}">Restaurer</button></div>`;
+      return `<div class="trash-item"><div class="trash-item-info"><span class="trash-item-name">${label}</span><span class="trash-item-origin">${origin}</span></div><button class="btn-restore" data-restore="${i}">${t('restore_btn')}</button></div>`;
     }).join('');
     container.querySelectorAll('[data-restore]').forEach(btn => {
       btn.addEventListener('click', async () => {
         try {
           await API.post(`/trash/restore/${btn.dataset.restore}`);
-          toast('Élément restauré');
+          toast(t('item_restored'));
           renderTrash();
-        } catch (err) { toast(err.message); }
+        } catch (err) { toast(t('error_prefix') + err.message); }
       });
     });
   } catch (err) { container.innerHTML = `<p style="color:var(--text-dim)">${err.message}</p>`; }
@@ -548,10 +667,7 @@ function openFile(f) {
   currentFile = f;
   $('#file-title').textContent = (f.emoji ? f.emoji + ' ' : '') + f.name;
   $('#quick-entry').value = '';
-  const isShared = f.sharedWith && f.sharedWith.length > 0;
-  $('#quick-entry').placeholder = isShared 
-    ? "Nouvelle mission... ajoutez #section pour trier, @membre pour assigner"
-    : "Nouvelle mission... ajoutez #section pour trier";
+  updateQuickEntryPlaceholder();
   renderSections();
   transitionTo('file-screen', 'left');
   setTimeout(() => $('#quick-entry').focus(), 100);
@@ -578,14 +694,14 @@ function startTitleEdit() {
       try {
         const { file } = await API.put(`/files/${currentFile._id}`, { name: newName });
         currentFile = file;
-        toast('Titre modifié !');
-      } catch (err) { toast(err.message); }
+        toast(t('title_modified'));
+      } catch (err) { toast(t('error_prefix') + err.message); }
     }
     wrapper.innerHTML = '';
     const h2 = document.createElement('h2');
     h2.id = 'file-title';
     h2.className = 'file-title-header';
-    h2.title = 'Cliquer pour renommer';
+    h2.title = t('click_to_rename');
     h2.textContent = (currentFile.emoji ? currentFile.emoji + ' ' : '') + currentFile.name;
     wrapper.appendChild(h2);
   }
@@ -613,7 +729,7 @@ async function saveFile() {
   try {
     const { file } = await API.put(`/files/${currentFile._id}`, { sections: currentFile.sections });
     currentFile = file;
-  } catch (err) { toast(err.message); }
+  } catch (err) { toast(t('error_prefix') + err.message); }
 }
 
 /* ===== POLLING (collaboration) ===== */
@@ -1018,10 +1134,10 @@ function bindMissionEvents() {
       if (newName && newName.toLowerCase() !== oldName.toLowerCase()) {
         // Check no other section has this name
         const conflict = currentFile.sections.find(s => s.name.toLowerCase() === newName.toLowerCase() && s.name !== oldName);
-        if (conflict) { toast('Une section avec ce nom existe déjà.'); renderSections(); return; }
+        if (conflict) { toast(t('section_exists')); renderSections(); return; }
         currentFile.sections.forEach(s => { if (s.name === oldName) s.name = newName; });
         await saveFile();
-        toast('Section renommée !');
+        toast(t('section_renamed'));
       }
       renderSections();
     };
@@ -1131,7 +1247,7 @@ function bindMissionEvents() {
       }
     });
     currentFile.sections = currentFile.sections.filter(s => s.missions.length > 0);
-    await saveFile(); toast('Mission supprimée'); renderSections();
+    await saveFile(); toast(t('mission_deleted')); renderSections();
   }));
 
   document.querySelectorAll('[data-addsub]').forEach(btn => btn.addEventListener('click', () => {
@@ -1591,6 +1707,8 @@ $('#theme-toggle').addEventListener('click', () => {
     if (currentUser) {
       $('#settings-name').value = currentUser.name || '';
       $('#settings-email').textContent = currentUser.email || '';
+      const select = $('#settings-lang');
+      if (select) select.value = currentLanguage;
     }
   }
   function closeSettings() {
@@ -1606,20 +1724,36 @@ $('#theme-toggle').addEventListener('click', () => {
   closeBtn.addEventListener('click', closeSettings);
   overlay.addEventListener('click', closeSettings);
 
+  /* ── PROFILE: Save language ── */
+  const langSelect = $('#settings-lang');
+  if (langSelect) {
+    langSelect.addEventListener('change', async () => {
+      const selectedLang = langSelect.value;
+      if (selectedLang === currentLanguage) return;
+      try {
+        await updateLanguage(selectedLang);
+        if (currentUser) {
+          const data = await API.patch('/auth/me', { language: selectedLang });
+          currentUser = data.user;
+        }
+      } catch (err) {
+        toast(t('error_prefix') + err.message);
+      }
+    });
+  }
+
   /* ── PROFILE: Save name ── */
   $('#settings-save-name').addEventListener('click', async () => {
     const newName = $('#settings-name').value.trim();
-    if (!newName) return toast('Le nom ne peut pas être vide.');
+    if (!newName) return toast(t('name_empty'));
     if (newName === (currentUser && currentUser.name)) return;
     try {
       const data = await API.req('PATCH', '/auth/me', { name: newName });
       currentUser = data.user;
-      // Update greeting in header
-      const greet = $('#user-greeting');
-      if (greet) greet.textContent = `Bonjour, ${currentUser.name}`;
-      toast('Nom mis à jour !');
+      updateLanguage(currentLanguage);
+      toast(t('name_updated'));
     } catch (err) {
-      toast('Erreur : ' + err.message);
+      toast(t('error_prefix') + err.message);
     }
   });
 
@@ -1662,7 +1796,7 @@ $('#theme-toggle').addEventListener('click', () => {
       currentUser = null;
       closeSettings();
       transitionTo('auth-screen', 'down');
-      toast('Compte supprimé.');
+      toast(t('account_deleted'));
     } catch (err) {
       errEl.textContent = err.message;
     }
@@ -2055,7 +2189,7 @@ $('#theme-toggle').addEventListener('click', () => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast('Image trop lourde (max 2 Mo).');
+      toast(t('image_too_heavy'));
       e.target.value = '';
       return;
     }
@@ -2065,7 +2199,7 @@ $('#theme-toggle').addEventListener('click', () => {
       $('#wp-image-preview').style.background = `url(${dataUrl}) center/cover`;
       $('#wp-image-preview').textContent = '';
       applyWallpaper({ type: 'image', value: dataUrl });
-      toast('Fond d\'écran appliqué !');
+      toast(t('wallpaper_applied'));
     };
     reader.readAsDataURL(file);
   });
@@ -2132,7 +2266,7 @@ $('#theme-toggle').addEventListener('click', () => {
 
   $('#accent-reset-btn').addEventListener('click', () => {
     applyAccent(DEFAULT_ACCENT);
-    toast('Couleur réinitialisée.');
+    toast(t('accent_reset_toast'));
   });
 
 })(); // end settings module
