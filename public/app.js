@@ -467,6 +467,10 @@ function openFile(f) {
   currentFile = f;
   $('#file-title').textContent = (f.emoji ? f.emoji + ' ' : '') + f.name;
   $('#quick-entry').value = '';
+  const isShared = f.sharedWith && f.sharedWith.length > 0;
+  $('#quick-entry').placeholder = isShared 
+    ? "Nouvelle mission... ajoutez #section pour trier, @membre pour assigner"
+    : "Nouvelle mission... ajoutez #section pour trier";
   renderSections();
   showScreen('file-screen');
   setTimeout(() => $('#quick-entry').focus(), 100);
@@ -548,49 +552,129 @@ function stopPolling() {
   if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
 }
 
-/* ===== QUICK ENTRY — SECTION AUTOCOMPLETE ===== */
+/* ===== COLLABORATOR & TAG HELPERS ===== */
+function getCollabs() {
+  if (!currentFile) return [];
+  const isShared = currentFile.sharedWith && currentFile.sharedWith.length > 0;
+  if (!isShared) return [];
+
+  const list = [];
+  if (currentFile.ownerId) {
+    if (currentFile.ownerId.name) list.push(currentFile.ownerId.name);
+    else if (currentFile.ownerId.email) list.push(currentFile.ownerId.email);
+  }
+  if (currentFile.sharedWith) {
+    currentFile.sharedWith.forEach(u => {
+      if (u.name) list.push(u.name);
+      else if (u.email) list.push(u.email);
+    });
+  }
+  return [...new Set(list)];
+}
+
+function parseTags(val) {
+  let sectionName = 'Général';
+  let cleanText = val;
+
+  const hashMatch = val.match(/#(\S+)/);
+  if (hashMatch) {
+    sectionName = hashMatch[1];
+    cleanText = cleanText.replace(/#\S+/g, '').trim();
+  }
+
+  const collabs = getCollabs();
+  const sortedCollabs = [...collabs].sort((a, b) => b.length - a.length);
+
+  const matchedAssignees = [];
+
+  for (const name of sortedCollabs) {
+    const escapedName = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const regex = new RegExp('@' + escapedName + '(?=\\s|$|[.,!?;])', 'gi');
+    if (regex.test(cleanText)) {
+      matchedAssignees.push(name);
+      cleanText = cleanText.replace(regex, '').trim();
+    }
+  }
+
+  const remainingAtMatches = cleanText.match(/@(\S+)/g);
+  if (remainingAtMatches) {
+    remainingAtMatches.forEach(match => {
+      const parsedName = match.substring(1);
+      if (!matchedAssignees.includes(parsedName)) {
+        matchedAssignees.push(parsedName);
+      }
+    });
+    cleanText = cleanText.replace(/@\S+/g, '').trim();
+  }
+
+  const uniqueAssignees = [...new Set(matchedAssignees)];
+  const assignee = uniqueAssignees.length > 0 ? uniqueAssignees.join(', ') : null;
+
+  cleanText = cleanText.replace(/\s+/g, ' ').trim();
+  return { sectionName, assignee, cleanText };
+}
+
+/* ===== QUICK ENTRY — SECTION & USER AUTOCOMPLETE ===== */
 (function () {
   const input    = $('#quick-entry');
   const ghost    = $('#quick-entry-ghost');
   const tabHint  = $('#tab-hint');
-  let currentSuggestion = ''; // full section name to suggest
-  let hashStart = -1;          // index of '#' in input value
+  let currentSuggestion = ''; // tag name to suggest
+  let prefixType = '';         // '#' or '@'
+  let tagStart = -1;          // index of '#' or '@' in input value
 
   function getSections() {
     return currentFile ? currentFile.sections.map(s => s.name) : [];
   }
 
-  function findMatch(typed) {
-    // typed = text after '#', case-insensitive prefix match
+  function findMatch(typed, type) {
     if (!typed) return '';
     const lower = typed.toLowerCase();
-    return getSections().find(s => s.toLowerCase().startsWith(lower) && s.toLowerCase() !== lower) || '';
+    const pool = type === '#' ? getSections() : getCollabs();
+    return pool.find(s => s.toLowerCase().startsWith(lower) && s.toLowerCase() !== lower) || '';
   }
 
   function updateGhost() {
     const val = input.value;
     const hashIdx = val.lastIndexOf('#');
+    const atIdx = val.lastIndexOf('@');
 
-    if (hashIdx === -1) {
-      // No '#' → clear ghost
+    let activeIdx = -1;
+    let type = '';
+    if (hashIdx > atIdx) {
+      activeIdx = hashIdx;
+      type = '#';
+    } else {
+      activeIdx = atIdx;
+      type = '@';
+    }
+
+    if (activeIdx === -1) {
       ghost.innerHTML = '';
       tabHint.style.display = 'none';
       currentSuggestion = '';
-      hashStart = -1;
+      prefixType = '';
+      tagStart = -1;
       return;
     }
 
-    hashStart = hashIdx;
-    const afterHash = val.slice(hashIdx + 1); // text typed after '#'
-    // Only suggest if afterHash has no spaces (still completing the tag)
-    if (/\s/.test(afterHash)) {
-      ghost.innerHTML = '';
-      tabHint.style.display = 'none';
-      currentSuggestion = '';
-      return;
+    if (type === '@') {
+      const isShared = currentFile && currentFile.sharedWith && currentFile.sharedWith.length > 0;
+      if (!isShared) {
+        ghost.innerHTML = '';
+        tabHint.style.display = 'none';
+        currentSuggestion = '';
+        prefixType = '';
+        tagStart = -1;
+        return;
+      }
     }
 
-    const match = findMatch(afterHash);
+    tagStart = activeIdx;
+    prefixType = type;
+    const afterSymbol = val.slice(activeIdx + 1);
+
+    const match = findMatch(afterSymbol, type);
     if (!match) {
       ghost.innerHTML = '';
       tabHint.style.display = 'none';
@@ -599,9 +683,8 @@ function stopPolling() {
     }
 
     currentSuggestion = match;
-    const completion = match.slice(afterHash.length); // remaining chars to complete
+    const completion = match.slice(afterSymbol.length);
 
-    // Build ghost: transparent copy of typed text + coloured completion
     const typedSpan    = `<span class="ghost-typed">${esc(val)}</span>`;
     const suggSpan     = `<span class="ghost-suggestion">${esc(completion)}</span>`;
     ghost.innerHTML    = typedSpan + suggSpan;
@@ -609,10 +692,10 @@ function stopPolling() {
   }
 
   function acceptSuggestion() {
-    if (!currentSuggestion || hashStart === -1) return;
+    if (!currentSuggestion || tagStart === -1) return;
     const val       = input.value;
-    const afterHash = val.slice(hashStart + 1);
-    const completion = currentSuggestion.slice(afterHash.length);
+    const afterSymbol = val.slice(tagStart + 1);
+    const completion = currentSuggestion.slice(afterSymbol.length);
     input.value = val + completion;
     updateGhost();
     input.focus();
@@ -621,7 +704,6 @@ function stopPolling() {
   input.addEventListener('input', updateGhost);
 
   input.addEventListener('keydown', async e => {
-    // Tab → accept suggestion
     if (e.key === 'Tab') {
       if (currentSuggestion) {
         e.preventDefault();
@@ -630,7 +712,6 @@ function stopPolling() {
       return;
     }
 
-    // Escape → clear suggestion
     if (e.key === 'Escape') {
       ghost.innerHTML = '';
       tabHint.style.display = 'none';
@@ -638,17 +719,24 @@ function stopPolling() {
       return;
     }
 
-    // Enter → add mission
     if (e.key !== 'Enter') return;
     const val = e.target.value.trim();
     if (!val) return;
-    const hashMatch   = val.match(/#(\S+)/);
-    const sectionName = hashMatch ? hashMatch[1] : 'Général';
-    const missionText = val.replace(/#\S+/g, '').trim();
-    if (!missionText) return;
+
+    const { sectionName, assignee, cleanText } = parseTags(val);
+    if (!cleanText) return;
+
     let sec = currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
     if (!sec) { sec = { name: sectionName, missions: [] }; currentFile.sections.push(sec); }
-    sec.missions.push({ id: uid(), text: missionText, done: false, subtasks: [] });
+    
+    sec.missions.push({
+      id: uid(),
+      text: cleanText,
+      done: false,
+      subtasks: [],
+      assignedTo: assignee
+    });
+
     e.target.value = '';
     ghost.innerHTML = '';
     tabHint.style.display = 'none';
@@ -670,11 +758,74 @@ function renderSections() {
   $('#progress-fill').style.width = pct + '%';
   $('#progress-text').textContent = pct + '%';
   let html = '';
+  
+  const isShared = currentFile.sharedWith && currentFile.sharedWith.length > 0;
+  const myToken = currentUser ? (currentUser.name || currentUser.email) : '';
+
   currentFile.sections.forEach(sec => {
-    const sorted = [...sec.missions].sort((a, b) => a.done - b.done);
     const doneCount = sec.missions.filter(m => m.done).length;
     html += `<div class="section"><div class="section-header"><span class="section-tag" data-secedit="${esc(sec.name)}" title="Cliquer pour renommer"># ${esc(sec.name)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
-    sorted.forEach(m => { html += renderMission(m, sec.name); });
+    
+    if (!isShared) {
+      const sorted = [...sec.missions].sort((a, b) => {
+        if (a.done !== b.done) return a.done - b.done;
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      });
+      sorted.forEach(m => { html += renderMission(m, sec.name); });
+    } else {
+      // Group by assignee
+      const groups = {};
+      sec.missions.forEach(m => {
+        let groupKey = 'unassigned';
+        if (m.assignedTo) {
+          if (m.assignedTo.includes(',')) {
+            groupKey = 'teamwork';
+          } else {
+            groupKey = m.assignedTo;
+          }
+        }
+        if (!groups[groupKey]) groups[groupKey] = [];
+        groups[groupKey].push(m);
+      });
+
+      // Sort assignee groups
+      const groupKeys = Object.keys(groups).sort((a, b) => {
+        if (a === 'unassigned') return 1;
+        if (b === 'unassigned') return -1;
+        if (a === 'teamwork') return 1;
+        if (b === 'teamwork') return -1;
+        if (myToken) {
+          if (a.toLowerCase() === myToken.toLowerCase()) return -1;
+          if (b.toLowerCase() === myToken.toLowerCase()) return 1;
+        }
+        return a.localeCompare(b);
+      });
+
+      groupKeys.forEach(gKey => {
+        let headerLabel = '';
+        if (gKey === 'unassigned') {
+          headerLabel = 'Sans assignation';
+        } else if (gKey === 'teamwork') {
+          headerLabel = 'Team Work';
+        } else {
+          headerLabel = gKey;
+        }
+
+        html += `<div class="assignee-group">
+          <div class="assignee-group-header">@ ${esc(headerLabel)}</div>
+          <div class="assignee-group-list">`;
+
+        const sortedMissions = groups[gKey].sort((a, b) => a.done - b.done);
+        sortedMissions.forEach(m => {
+          html += renderMission(m, sec.name);
+        });
+
+        html += `</div></div>`;
+      });
+    }
     html += '</div>';
   });
   container.innerHTML = html;
@@ -697,12 +848,24 @@ function renderMission(m, secName) {
     : (m.dueDate ? `<span class="mission-date ${mClass}">${dateBadgeEmoji(mClass)} ${formatDate(m.dueDate)}</span>` : '');
   const mDueDateStr = m.dueDate ? new Date(m.dueDate).toISOString().split('T')[0] : '';
 
+  let teamworkBadge = '';
+  if (m.assignedTo && m.assignedTo.includes(',')) {
+    const assigneeNames = m.assignedTo.split(',').map(s => s.trim());
+    teamworkBadge = `<span class="mission-team-badge" title="${esc(m.assignedTo)}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #3182ce; margin-right: 4px; display: inline-block; vertical-align: middle;"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      <span class="team-count" style="font-weight: 600; font-size: 0.82rem; color: var(--text-dim); display: inline-block; vertical-align: middle;">${assigneeNames.length}</span>
+    </span>`;
+  }
+
+  const isShared = currentFile && currentFile.sharedWith && currentFile.sharedWith.length > 0;
+  const assignBtn = isShared
+    ? `<button class="icon-btn" data-assign="${m.id}" title="Assigner des membres"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>`
+    : '';
+
   let sub = '';
   if (hasSubtasks) {
     const sortedSub = [...m.subtasks].sort((a, b) => {
-      // Terminées en bas
       if (a.done !== b.done) return a.done - b.done;
-      // Parmi les non-terminées : deadline la plus proche en premier
       if (!a.dueDate && !b.dueDate) return 0;
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
@@ -714,11 +877,22 @@ function renderMission(m, secName) {
       const stDateBadge = st.done
         ? `<span class="subtask-date done"> Fait le ${formatDate(st.completedAt || new Date())}</span>`
         : (st.dueDate ? `<span class="subtask-date ${stClass}">${dateBadgeEmoji(stClass)} ${formatDate(st.dueDate)}</span>` : '');
+      
+      const stAssigneeBadge = st.assignedTo
+        ? `<span class="subtask-assignee" data-stassign="${st.id}" data-mid="${m.id}" title="Assigné à @${esc(st.assignedTo)}">@${esc(st.assignedTo)}</span>`
+        : '';
+
+      const stAssignBtn = isShared
+        ? `<button class="icon-btn" data-stassignbtn="${st.id}" data-mid="${m.id}" title="Assigner des membres"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>`
+        : '';
+
       sub += `<div class="subtask-item${st.done ? ' completed' : ''}" data-stid="${st.id}">
         <button class="subtask-check${st.done ? ' checked' : ''}" data-stcheck="${st.id}" data-mid="${m.id}"></button>
         <span class="subtask-text" data-stedit="${st.id}" data-mid="${m.id}">${esc(st.text)}</span>
         ${stDateBadge}
+        ${stAssigneeBadge}
         <div class="subtask-actions">
+          ${stAssignBtn}
           <button class="icon-btn" data-stdatepick="${st.id}" data-mid="${m.id}" data-maxdate="${mDueDateStr}" title="Date d'échéance"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
           <button class="icon-btn danger" data-stdel="${st.id}" data-mid="${m.id}" title="Supprimer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
         </div>
@@ -727,11 +901,13 @@ function renderMission(m, secName) {
     sub += '</div>';
   }
   return `<div class="mission-item${m.done ? ' completed' : ''}" data-mid="${m.id}" data-sec="${esc(secName)}">
+    ${teamworkBadge}
     <button class="mission-check${m.done ? ' checked' : ''}" data-check="${m.id}"></button>
     ${arrow}
     <span class="mission-text" data-edit="${m.id}">${esc(m.text)}</span>
     ${dateBadge}
     <div class="mission-actions">
+      ${assignBtn}
       <button class="icon-btn" data-datepick="${m.id}" title="Date d'échéance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
       <button class="icon-btn" data-addsub="${m.id}" title="Ajouter sous-mission"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       <button class="icon-btn danger" data-del="${m.id}" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
@@ -798,22 +974,36 @@ function bindMissionEvents() {
   }));
 
   document.querySelectorAll('[data-edit]').forEach(span => span.addEventListener('click', () => {
-    const mid = span.dataset.edit, current = span.textContent;
+    const mid = span.dataset.edit;
+    let m = null;
+    let secName = '';
+    currentFile.sections.forEach(s => {
+      const found = s.missions.find(x => x.id === mid);
+      if (found) {
+        m = found;
+        secName = s.name;
+      }
+    });
+    if (!m) return;
+
+    let editValue = m.text;
+    if (secName.toLowerCase() !== 'général') {
+      editValue += ` #${secName}`;
+    }
+    if (m.assignedTo) {
+      const atMentions = m.assignedTo.split(',').map(s => `@${s.trim()}`).join(' ');
+      editValue += ` ${atMentions}`;
+    }
+
     const input = document.createElement('input');
-    input.type = 'text'; input.className = 'mission-text-input'; input.value = current;
+    input.type = 'text'; input.className = 'mission-text-input'; input.value = editValue;
     span.replaceWith(input); input.focus();
     let saved = false;
     const save = async () => {
       if (saved) return; saved = true;
       const val = input.value.trim();
-      if (val && val !== current) {
-        const hashMatch = val.match(/#(\S+)/);
-        let sectionName = null;
-        let cleanText = val;
-        if (hashMatch) {
-          sectionName = hashMatch[1];
-          cleanText = val.replace(/#\S+/g, '').trim();
-        }
+      if (val && val !== editValue) {
+        const { sectionName, assignee, cleanText } = parseTags(val);
 
         let foundMission = null;
         let currentSec = null;
@@ -827,12 +1017,11 @@ function bindMissionEvents() {
 
         if (foundMission) {
           foundMission.text = cleanText;
-          if (sectionName && sectionName.toLowerCase() !== currentSec.name.toLowerCase()) {
-            // Retirer de l'ancienne section
+          foundMission.assignedTo = assignee;
+          if (sectionName.toLowerCase() !== currentSec.name.toLowerCase()) {
             const idx = currentSec.missions.findIndex(x => x.id === mid);
             if (idx !== -1) currentSec.missions.splice(idx, 1);
 
-            // Ajouter à la nouvelle section
             let targetSec = currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
             if (!targetSec) {
               targetSec = { name: sectionName, missions: [] };
@@ -842,9 +1031,7 @@ function bindMissionEvents() {
           }
         }
 
-        // Nettoyer les sections vides
         currentFile.sections = currentFile.sections.filter(s => s.missions.length > 0);
-
         await saveFile();
       }
       renderSections();
@@ -883,7 +1070,8 @@ function bindMissionEvents() {
       const val = input.value.trim();
       if (val) {
         if (!mission.subtasks) mission.subtasks = [];
-        mission.subtasks.push({ id: uid(), text: val, done: false });
+        const { assignee, cleanText } = parseTags(val);
+        mission.subtasks.push({ id: uid(), text: cleanText, done: false, assignedTo: assignee });
         await saveFile();
       }
       renderSections();
@@ -925,16 +1113,42 @@ function bindMissionEvents() {
   }));
 
   document.querySelectorAll('[data-stedit]').forEach(span => span.addEventListener('click', () => {
-    const stid = span.dataset.stedit, mid = span.dataset.mid, current = span.textContent;
+    const stid = span.dataset.stedit, mid = span.dataset.mid;
+    let st = null;
+    currentFile.sections.forEach(s => {
+      const m = s.missions.find(x => x.id === mid);
+      if (m && m.subtasks) {
+        const found = m.subtasks.find(x => x.id === stid);
+        if (found) st = found;
+      }
+    });
+    if (!st) return;
+
+    let editValue = st.text;
+    if (st.assignedTo) {
+      const atMentions = st.assignedTo.split(',').map(s => `@${s.trim()}`).join(' ');
+      editValue += ` ${atMentions}`;
+    }
+
     const input = document.createElement('input');
-    input.type = 'text'; input.className = 'mission-text-input'; input.value = current; input.style.fontSize = '0.85rem';
+    input.type = 'text'; input.className = 'mission-text-input'; input.value = editValue; input.style.fontSize = '0.85rem';
     span.replaceWith(input); input.focus();
     let saved = false;
     const save = async () => {
       if (saved) return; saved = true;
       const val = input.value.trim();
-      if (val && val !== current) {
-        currentFile.sections.forEach(s => { const m = s.missions.find(x => x.id === mid); if (m && m.subtasks) { const st = m.subtasks.find(x => x.id === stid); if (st) st.text = val; } });
+      if (val && val !== editValue) {
+        const { assignee, cleanText } = parseTags(val);
+        currentFile.sections.forEach(s => {
+          const m = s.missions.find(x => x.id === mid);
+          if (m && m.subtasks) {
+            const found = m.subtasks.find(x => x.id === stid);
+            if (found) {
+              found.text = cleanText;
+              found.assignedTo = assignee;
+            }
+          }
+        });
         await saveFile();
       }
       renderSections();
@@ -999,6 +1213,124 @@ function bindMissionEvents() {
     currentFile.sections.forEach(s => { const m = s.missions.find(x => x.id === mid); if (m && m.subtasks) { const st = m.subtasks.find(x => x.id === stid); if (st && st.dueDate) currentVal = st.dueDate; } });
     openDatePicker(btn, { type: 'subtask', mid, stid, currentVal, maxDate });
   }));
+
+  // ── Mission Assignee Dropdown ──
+  document.querySelectorAll('.mission-team-badge, [data-assign]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    const mid = el.dataset.assign || el.closest('.mission-item').dataset.mid;
+    showAssigneeDropdown(el, mid);
+  }));
+
+  // ── Subtask Assignee Dropdown ──
+  document.querySelectorAll('.subtask-assignee, [data-stassignbtn]').forEach(el => el.addEventListener('click', e => {
+    e.stopPropagation();
+    const mid = el.dataset.mid;
+    const stid = el.dataset.stassign || el.dataset.stassignbtn;
+    showAssigneeDropdown(el, mid, stid);
+  }));
+}
+
+function showAssigneeDropdown(badgeEl, mid, stid = null) {
+  const existing = document.querySelector('.assignee-dropdown');
+  if (existing) existing.remove();
+
+  let targetObj = null;
+  if (stid) {
+    currentFile.sections.forEach(s => {
+      const m = s.missions.find(x => x.id === mid);
+      if (m && m.subtasks) {
+        const found = m.subtasks.find(x => x.id === stid);
+        if (found) targetObj = found;
+      }
+    });
+  } else {
+    currentFile.sections.forEach(s => {
+      const found = s.missions.find(x => x.id === mid);
+      if (found) targetObj = found;
+    });
+  }
+  if (!targetObj) return;
+
+  const collabs = [];
+  if (currentFile.ownerId) {
+    collabs.push(currentFile.ownerId);
+  }
+  if (currentFile.sharedWith) {
+    currentFile.sharedWith.forEach(u => collabs.push(u));
+  }
+
+  const uniqueCollabs = [];
+  const seen = new Set();
+  collabs.forEach(u => {
+    const uid = u._id || u;
+    if (!seen.has(uid)) {
+      seen.add(uid);
+      uniqueCollabs.push(u);
+    }
+  });
+
+  let selected = targetObj.assignedTo
+    ? targetObj.assignedTo.split(',').map(s => s.trim())
+    : [];
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'assignee-dropdown';
+
+  let hasChanged = false;
+
+  uniqueCollabs.forEach(u => {
+    const name = u.name || u.email;
+    const item = document.createElement('div');
+    item.className = 'assignee-dropdown-item';
+    if (selected.includes(name)) {
+      item.classList.add('active');
+    }
+    item.textContent = name;
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hasChanged = true;
+      if (selected.includes(name)) {
+        selected = selected.filter(x => x !== name);
+        item.classList.remove('active');
+      } else {
+        selected.push(name);
+        item.classList.add('active');
+      }
+      targetObj.assignedTo = selected.length > 0 ? selected.join(', ') : null;
+    });
+    dropdown.appendChild(item);
+  });
+
+  const unassignItem = document.createElement('div');
+  unassignItem.className = 'assignee-dropdown-item unassign';
+  unassignItem.textContent = "Retirer l'assignation";
+  unassignItem.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    selected = [];
+    targetObj.assignedTo = null;
+    await saveFile();
+    renderSections();
+    dropdown.remove();
+  });
+  dropdown.appendChild(unassignItem);
+
+  document.body.appendChild(dropdown);
+
+  const rect = badgeEl.getBoundingClientRect();
+  dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`;
+  dropdown.style.left = `${rect.left + window.scrollX}px`;
+
+  const closeDropdown = async (e) => {
+    if (!dropdown.contains(e.target) && e.target !== badgeEl) {
+      dropdown.remove();
+      document.removeEventListener('click', closeDropdown);
+      if (hasChanged) {
+        await saveFile();
+        renderSections();
+      }
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeDropdown), 10);
 }
 
 /* ===== CUSTOM DATE PICKER ===== */

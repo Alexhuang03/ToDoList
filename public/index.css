@@ -796,6 +796,56 @@ body {
 .mission-date.warning, .subtask-date.warning { color: #e67e22; border-color: #e67e22; background: rgba(230,126,34,0.12); }
 .mission-date.urgent, .mission-date.overdue, .subtask-date.urgent, .subtask-date.overdue { color: var(--danger); border-color: var(--danger); background: var(--danger-glow); }
 .mission-date.done, .subtask-date.done { color: var(--text-muted); border-color: var(--border); background: var(--bg-hover); text-decoration: none; }
+.mission-assignee {
+  font-size: 0.78rem;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  background: var(--accent-glow);
+  border-radius: 4px;
+  padding: 0.12rem 0.5rem;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.mission-item.completed .mission-assignee {
+  color: var(--text-muted);
+  border-color: var(--border);
+  background: var(--bg-hover);
+}
+
+.mission-team-badge {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: var(--transition);
+  gap: 3px;
+}
+.mission-team-badge:hover {
+  transform: scale(1.1);
+}
+
+.assignee-group {
+  margin-top: 0.8rem;
+  margin-bottom: 0.8rem;
+  border-left: 2px solid var(--border);
+  margin-left: 8px;
+  padding-left: 14px;
+}
+.assignee-group-header {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+}
+
 .dp-popup {
   position: absolute;
   z-index: 999;
@@ -1365,6 +1415,73 @@ body {
 .accent-swatch:hover, .accent-swatch.active {
   border-color: var(--text);
   transform: scale(1.12);
+}
+
+.assignee-dropdown {
+  position: absolute;
+  z-index: 10000;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fadeIn 0.15s ease-out;
+}
+.assignee-dropdown-item {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+}
+.assignee-dropdown-item:hover {
+  background: var(--bg-hover);
+}
+.assignee-dropdown-item.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-weight: 600;
+}
+.assignee-dropdown-item.unassign {
+  color: var(--danger);
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 8px;
+}
+.assignee-dropdown-item.unassign:hover {
+  background: var(--danger-glow);
+}
+
+.subtask-assignee {
+  font-size: 0.72rem;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  background: var(--accent-glow);
+  border-radius: 4px;
+  padding: 0.08rem 0.35rem;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.subtask-assignee:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.subtask-item.completed .subtask-assignee {
+  color: var(--text-dim);
+  border-color: var(--border);
+  background: var(--bg-hover);
+  text-decoration: line-through;
 }
 
 

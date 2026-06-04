@@ -8,15 +8,18 @@ La plupart des outils de productivité sont trop complexes. **ToDoList** supprim
 
 ## Fonctionnalités Principales
 
-* **Saisie Éclair (Quick Entry) :** Tapez votre tâche et ajoutez `#nomdelasection` à la fin — la section est créée à la volée automatiquement.
-* **Sous-missions :** Chaque mission peut contenir des sous-tâches, avec cochage en cascade (cocher la principale coche toutes les sous-missions).
+* **Saisie Éclair & Autocomplétion (Quick Entry) :** Tapez votre tâche et organisez-la instantanément en ajoutant `#section` et des mentions `@Nom` (avec autocomplétion intelligente par touche `Tab`).
+* **Gestion d'Équipe & Tri par Assignation :**
+  * **Groupement hiérarchique :** Dans les listes partagées, les missions sont automatiquement sous-groupées par assignés (`@ Membre`, `@ Team Work` pour plusieurs assignés, ou `@ Sans assignation`).
+  * **Sélection Multi-membres :** Dropdown de sélection à choix multiples persistant (sauvegarde automatique en cliquant à l'extérieur).
+  * **Badge Collaboratif `👥 X` :** Affichage d'un badge épuré à gauche du cercle de validation pour repérer les tâches partagées, avec infobulle listant les membres au survol.
+* **Sous-missions d'Équipe :** 
+  * Chaque mission peut être découpée en sous-tâches, qui héritent désormais de la possibilité d'être **assignées individuellement** (affichage du badge `@nom` sur le côté droit, à gauche du calendrier).
 * **Deadlines colorées :** Assignez une date d'échéance à chaque mission ou sous-mission. L'encadrement change de couleur selon l'urgence (😎 vert > 7j, 🤔 orange < 7j, 🫪 rouge < 3j).
-* **Tri automatique :** Les sous-missions sont triées par urgence de deadline, les tâches terminées descendent en bas de liste.
-* **Interface Minimaliste :** Les actions avancées (sous-missions, calendrier, suppression) n'apparaissent qu'au survol pour garder l'interface visuellement apaisante.
-* **Mode Collaboratif :** Partagez vos fichiers avec des collaborateurs via leur adresse e-mail en un seul clic.
+* **Isolation Complète des Préférences :** Les fonds d'écran personnalisés (y compris l'image d'accueil `accueil.png`), les palettes de couleur d'accentuation unie et les modes jour/nuit sont totalement isolés par utilisateur pour une expérience personnalisée et non perturbée.
+* **Interface Minimaliste :** Les actions avancées (sous-missions, calendrier, assignation, suppression) n'apparaissent qu'au survol pour garder l'interface visuellement apaisante.
 * **Corbeille Sécurisée :** Missions et sous-missions supprimées sont restaurables depuis la corbeille globale.
 * **Réinitialisation de mot de passe :** Les utilisateurs peuvent recevoir un lien de réinitialisation par e-mail.
-* **Thème clair / sombre :** Basculez entre les deux modes depuis l'en-tête.
 
 ## Prérequis
 
