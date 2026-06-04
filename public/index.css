@@ -223,7 +223,7 @@ body.screen-transitioning { overflow: hidden; }
   justify-content: center;
   position: relative;
   overflow: hidden;
-  background: url('/Images/accueil.png') center/cover no-repeat;
+  background: #ffffff url('/Images/accueil.png') bottom center/contain no-repeat;
 }
 #auth-screen::before {
   content: '';

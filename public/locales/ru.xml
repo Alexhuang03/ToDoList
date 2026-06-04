@@ -62,6 +62,7 @@
   <entry key="wp_color">Однотонный цвет</entry>
   <entry key="wp_image">Свое изображение</entry>
   <entry key="wp_image_btn">📂 Импортировать изображение (макс. 2 МБ)</entry>
+  <entry key="wp_fit_contain">Вписать изображение вместо заполнения</entry>
   <entry key="accent_title">🎨 Акцентный цвет</entry>
   <entry key="accent_hint">Заменяет фиолетовый цвет на кнопках и значках.</entry>
   <entry key="accent_reset">↩ Сбросить (фиолетовый)</entry>

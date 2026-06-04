@@ -62,6 +62,7 @@
   <entry key="wp_color">Couleur unie</entry>
   <entry key="wp_image">Image perso</entry>
   <entry key="wp_image_btn">📂 Importer une image (max 2 Mo)</entry>
+  <entry key="wp_fit_contain">Ajuster l'image au lieu de remplir</entry>
   <entry key="accent_title">🎨 Couleur d'accentuation</entry>
   <entry key="accent_hint">Remplace le violet sur les boutons et les badges.</entry>
   <entry key="accent_reset">↩ Réinitialiser (violet)</entry>

@@ -62,6 +62,7 @@
   <entry key="wp_color">Solid Color</entry>
   <entry key="wp_image">Custom Image</entry>
   <entry key="wp_image_btn">📂 Import image (max 2 MB)</entry>
+  <entry key="wp_fit_contain">Fit image instead of fill</entry>
   <entry key="accent_title">🎨 Accent Color</entry>
   <entry key="accent_hint">Replaces purple color on buttons and badges.</entry>
   <entry key="accent_reset">↩ Reset (purple)</entry>

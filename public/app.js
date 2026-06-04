@@ -2172,10 +2172,11 @@ $('#theme-toggle').addEventListener('click', () => {
         }
       `;
     } else if (cfg.type === 'image') {
+      const fitMode = cfg.fit || 'cover';
       wallpaperStyleTag.textContent = `
         ${screens.map(s => s + '::before').join(', ')} {
           background-image: url('${cfg.value}') !important;
-          background-size: cover !important;
+          background-size: ${fitMode} !important;
           background-position: center !important;
           background-repeat: no-repeat !important;
           filter: none !important;
@@ -2188,6 +2189,10 @@ $('#theme-toggle').addEventListener('click', () => {
           background: rgba(244,245,247,0.65) !important;
         }
       `;
+      const cb = $('#wp-fit-contain');
+      if (cb) {
+        cb.checked = fitMode === 'contain';
+      }
     }
 
     if (currentUser) {
@@ -2230,10 +2235,36 @@ $('#theme-toggle').addEventListener('click', () => {
         applyWallpaper({ type: 'color', value: hex });
       }
       else if (type === 'image') {
-        applyWallpaper({ type: 'image', value: '' });
+        const fitMode = $('#wp-fit-contain').checked ? 'contain' : 'cover';
+        let wp = localStorage.getItem('tdl_wallpaper_' + currentUser._id);
+        let val = '';
+        if (wp) {
+          try {
+            const parsed = JSON.parse(wp);
+            if (parsed.type === 'image') val = parsed.value;
+          } catch (_) {}
+        }
+        applyWallpaper({ type: 'image', value: val, fit: fitMode });
         $('#wp-image-row').style.display = 'flex';
       }
     });
+  });
+
+  $('#wp-fit-contain').addEventListener('change', () => {
+    let wp = localStorage.getItem('tdl_wallpaper_' + currentUser._id);
+    if (!wp && currentUser.wallpaper) {
+      wp = currentUser.wallpaper;
+    }
+    let cfg = { type: 'default' };
+    if (wp) {
+      try {
+        cfg = JSON.parse(wp);
+      } catch (_) {}
+    }
+    if (cfg.type === 'image') {
+      cfg.fit = $('#wp-fit-contain').checked ? 'contain' : 'cover';
+      applyWallpaper(cfg);
+    }
   });
 
   $('#wp-upload-btn').addEventListener('click', () => $('#wallpaper-file-input').click());
@@ -2250,7 +2281,8 @@ $('#theme-toggle').addEventListener('click', () => {
       const dataUrl = ev.target.result;
       $('#wp-image-preview').style.background = `url(${dataUrl}) center/cover`;
       $('#wp-image-preview').textContent = '';
-      applyWallpaper({ type: 'image', value: dataUrl });
+      const fitMode = $('#wp-fit-contain').checked ? 'contain' : 'cover';
+      applyWallpaper({ type: 'image', value: dataUrl, fit: fitMode });
       toast(t('wallpaper_applied'));
     };
     reader.readAsDataURL(file);

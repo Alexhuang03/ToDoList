@@ -490,10 +490,13 @@
             </div>
           </div>
         </div>
-        <div id="wp-image-row" class="settings-sub-row" style="display:none;">
-          <button id="wp-upload-btn" class="btn-ghost settings-action-btn" data-i18n="wp_image_btn">📂 Importer une
-            image (max 2 Mo)</button>
+        <div id="wp-image-row" class="settings-sub-row" style="display:none; flex-direction:column; gap:0.8rem; align-items:flex-start;">
+          <button id="wp-upload-btn" class="btn-ghost settings-action-btn" data-i18n="wp_image_btn">📂 Importer une image (max 2 Mo)</button>
           <input type="file" id="wallpaper-file-input" accept="image/*" style="display:none;">
+          <label style="display:flex; align-items:center; gap:0.6rem; font-size:0.95rem; cursor:pointer; margin-top:0.4rem;">
+            <input type="checkbox" id="wp-fit-contain">
+            <span data-i18n="wp_fit_contain">Ajuster l'image au lieu de remplir</span>
+          </label>
         </div>
       </section>
 
