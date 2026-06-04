@@ -1269,6 +1269,8 @@ function bindMissionEvents() {
         if (!mission.subtasks) mission.subtasks = [];
         const { assignee, cleanText } = parseTags(val);
         mission.subtasks.push({ id: uid(), text: cleanText, done: false, assignedTo: assignee });
+        mission.done = false;
+        mission.completedAt = null;
         await saveFile();
       }
       renderSections();
