@@ -172,6 +172,9 @@ function toast(msg) {
 }
 
 function showScreen(id) {
+  if (id === 'auth-screen') {
+    resetAuthScreen();
+  }
   // Instant switch — used only at first load / init, no animation
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active', 'anim-enter-up', 'anim-enter-left', 'anim-enter-right',
@@ -193,6 +196,10 @@ let _transitioning = false;
  */
 function transitionTo(toId, direction) {
   if (_transitioning) return;
+
+  if (toId === 'auth-screen') {
+    resetAuthScreen();
+  }
 
   const currentScreen = document.querySelector('.screen.active');
   const nextScreen = $(`#${toId}`);
@@ -265,6 +272,27 @@ function setLoading(btnId, loading) {
 }
 
 /* ===== AUTH ===== */
+function resetAuthScreen() {
+  document.querySelectorAll('#auth-screen input').forEach(input => {
+    input.value = '';
+  });
+  document.querySelectorAll('#auth-screen .auth-error').forEach(el => {
+    el.textContent = '';
+  });
+  const forgotMsg = $('#forgot-msg');
+  if (forgotMsg) {
+    forgotMsg.textContent = '';
+    forgotMsg.style.color = '';
+  }
+  document.querySelectorAll('#auth-screen .auth-form').forEach(form => {
+    if (form.id === 'login-form') {
+      form.classList.remove('hidden');
+    } else {
+      form.classList.add('hidden');
+    }
+  });
+}
+
 $('#show-register').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.remove('hidden'); });
 $('#show-login').addEventListener('click', e => { e.preventDefault(); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
 $('#show-forgot').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.remove('hidden'); $('#forgot-email').focus(); });
