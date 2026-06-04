@@ -103,4 +103,6 @@
   <entry key="origin_prefix">Из: {0}</entry>
   <entry key="restore_btn">Восстановить</entry>
   <entry key="click_to_rename">Нажмите для переименования</entry>
+  <entry key="clear_date">Сбросить дату</entry>
+  <entry key="completed_on">Выполнено {0}</entry>
 </translations>

@@ -103,4 +103,6 @@
   <entry key="origin_prefix">From: {0}</entry>
   <entry key="restore_btn">Restore</entry>
   <entry key="click_to_rename">Click to rename</entry>
+  <entry key="clear_date">Clear date</entry>
+  <entry key="completed_on">Completed on {0}</entry>
 </translations>

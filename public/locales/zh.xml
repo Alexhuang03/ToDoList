@@ -103,4 +103,6 @@
   <entry key="origin_prefix">来自：{0}</entry>
   <entry key="restore_btn">恢复</entry>
   <entry key="click_to_rename">点击重命名</entry>
+  <entry key="clear_date">清除日期</entry>
+  <entry key="completed_on">完成于 {0}</entry>
 </translations>

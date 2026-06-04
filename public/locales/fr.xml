@@ -103,4 +103,6 @@
   <entry key="origin_prefix">De : {0}</entry>
   <entry key="restore_btn">Restaurer</entry>
   <entry key="click_to_rename">Cliquer pour renommer</entry>
+  <entry key="clear_date">Effacer la date</entry>
+  <entry key="completed_on">Fait le {0}</entry>
 </translations>

@@ -1041,7 +1041,7 @@ function renderMission(m, secName) {
   
   const mClass = dateBadgeClass(m.dueDate, m.done);
   const dateBadge = m.done 
-    ? `<span class="mission-date done"> Fait le ${formatDate(m.completedAt || new Date())}</span>`
+    ? `<span class="mission-date done"> ${t('completed_on', formatDate(m.completedAt || new Date()))}</span>`
     : (m.dueDate ? `<span class="mission-date ${mClass}" data-datepick="${m.id}" style="cursor: pointer;" title="Modifier ou supprimer la date">${dateBadgeEmoji(mClass)} ${formatDate(m.dueDate)}</span>` : '');
   const mDueDateStr = m.dueDate ? new Date(m.dueDate).toISOString().split('T')[0] : '';
 
@@ -1072,7 +1072,7 @@ function renderMission(m, secName) {
     sortedSub.forEach(st => {
       const stClass = dateBadgeClass(st.dueDate, st.done);
       const stDateBadge = st.done
-        ? `<span class="subtask-date done"> Fait le ${formatDate(st.completedAt || new Date())}</span>`
+        ? `<span class="subtask-date done"> ${t('completed_on', formatDate(st.completedAt || new Date()))}</span>`
         : (st.dueDate ? `<span class="subtask-date ${stClass}" data-stdatepick="${st.id}" data-mid="${m.id}" data-maxdate="${mDueDateStr}" style="cursor: pointer;" title="Modifier ou supprimer la date">${dateBadgeEmoji(stClass)} ${formatDate(st.dueDate)}</span>` : '');
       
       const stAssigneeBadge = st.assignedTo
@@ -1573,8 +1573,22 @@ function closeDatePicker() {
 }
 
 function renderDPContent(popup, selectedVal) {
-  const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-  const DAYS = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+  const lang = currentLanguage || 'en';
+  let months, days;
+  if (lang === 'fr') {
+    months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    days = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+  } else if (lang === 'ru') {
+    months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    days = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  } else if (lang === 'zh') {
+    months = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+    days = ['一','二','三','四','五','六','日'];
+  } else {
+    months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    days = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  }
+
   const today = new Date(); today.setHours(0,0,0,0);
   const year = dpViewMonth.getFullYear();
   const month = dpViewMonth.getMonth();
@@ -1590,14 +1604,19 @@ function renderDPContent(popup, selectedVal) {
   const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
   const lastDay = new Date(year, month + 1, 0).getDate();
 
+  let titleText = `${months[month]} ${year}`;
+  if (lang === 'zh') {
+    titleText = `${year}年 ${months[month]}`;
+  }
+
   let html = `
     <div class="dp-header">
       <button class="dp-nav" id="dp-prev">‹</button>
-      <span class="dp-title">${MONTHS[month]} ${year}</span>
+      <span class="dp-title">${titleText}</span>
       <button class="dp-nav" id="dp-next">›</button>
     </div>
     <div class="dp-grid">
-      ${DAYS.map(d => `<span class="dp-label">${d}</span>`).join('')}
+      ${days.map(d => `<span class="dp-label">${d}</span>`).join('')}
       ${Array(firstDow).fill('<span></span>').join('')}
   `;
 
@@ -1615,7 +1634,7 @@ function renderDPContent(popup, selectedVal) {
     html += `<button class="${cls}" ${disabled ? 'disabled' : ''} data-date="${dateStr}">${d}</button>`;
   }
 
-  html += `</div><button class="dp-clear" id="dp-clear">✕ Effacer la date</button>`;
+  html += `</div><button class="dp-clear" id="dp-clear">✕ ${t('clear_date')}</button>`;
   popup.innerHTML = html;
 
   popup.querySelector('#dp-prev').addEventListener('click', e => {
