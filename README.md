@@ -13,10 +13,13 @@ La plupart des outils de productivité sont trop complexes. **ToDoList** supprim
   * **Groupement hiérarchique :** Dans les listes partagées, les missions sont automatiquement sous-groupées par assignés (`@ Membre`, `@ Team Work` pour plusieurs assignés, ou `@ Sans assignation`).
   * **Sélection Multi-membres :** Dropdown de sélection à choix multiples persistant (sauvegarde automatique en cliquant à l'extérieur).
   * **Badge Collaboratif `👥 X` :** Affichage d'un badge épuré à gauche du cercle de validation pour repérer les tâches partagées, avec infobulle listant les membres au survol.
-* **Sous-missions d'Équipe :** 
-  * Chaque mission peut être découpée en sous-tâches, qui héritent désormais de la possibilité d'être **assignées individuellement** (affichage du badge `@nom` sur le côté droit, à gauche du calendrier).
-* **Deadlines colorées :** Assignez une date d'échéance à chaque mission ou sous-mission. L'encadrement change de couleur selon l'urgence (😎 vert > 7j, 🤔 orange < 7j, 🫪 rouge < 3j).
-* **Isolation Complète des Préférences :** Les fonds d'écran personnalisés (y compris l'image d'accueil `accueil.png`), les palettes de couleur d'accentuation unie et les modes jour/nuit sont totalement isolés par utilisateur pour une expérience personnalisée et non perturbée.
+* **Sous-missions d'Équipe & Logique Intelligente :** 
+  * Chaque mission peut être découpée en sous-tâches, qui héritent de la possibilité d'être **assignées individuellement** (badge `@nom` sur le côté droit).
+  * **Logique de complétion :** Ajouter une nouvelle sous-tâche à une mission principale terminée décoche automatiquement cette dernière afin de garder le statut cohérent.
+* **Deadlines interactives :** Assignez une date d'échéance à chaque mission ou sous-mission. L'encadrement change de couleur selon l'urgence (😎 vert > 7j, 🤔 orange < 7j, 🫪 rouge < 3j). Cliquez sur la deadline pour modifier la date ou la supprimer.
+* **Transitions Spatiales "Style Apple" :** Navigation animée avec logique spatiale : glissement vers le haut (ouverture de rideau) lors de la connexion, glissement vers la gauche (creusement de profondeur) lors de l'entrée dans un fichier, glissement vers la droite lors du retour à l'accueil, et zoom fluide à l'ouverture de la corbeille.
+* **Support Multilingue Dynamique (XML) :** Traduction de l'application en 4 langues (Anglais par défaut, Français, Russe, Chinois) via un chargement asynchrone des paquets XML (`en.xml`, `fr.xml`, `zh.xml`, `ru.xml`). Le changement de langue applique instantanément les modifications sans rafraîchir la page, adaptant également le calendrier, les abréviations des jours et les badges de complétion.
+* **Isolation Complète des Préférences & Personnalisation :** Les fonds d'écran (y compris l'image personnalisée d'accueil), le mode sombre et les couleurs d'accentuation (saisissables en RGB ou sélectionnables sur grille) sont isolés par utilisateur.
 * **Interface Minimaliste :** Les actions avancées (sous-missions, calendrier, assignation, suppression) n'apparaissent qu'au survol pour garder l'interface visuellement apaisante.
 * **Corbeille Sécurisée :** Missions et sous-missions supprimées sont restaurables depuis la corbeille globale.
 * **Réinitialisation de mot de passe :** Les utilisateurs peuvent recevoir un lien de réinitialisation par e-mail.
