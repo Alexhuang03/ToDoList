@@ -2175,6 +2175,9 @@ $('#theme-toggle').addEventListener('click', () => {
       wallpaperStyleTag.textContent = `
         ${screens.map(s => s + '::before').join(', ')} {
           background-image: url('${cfg.value}') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
           filter: none !important;
           opacity: 1 !important;
         }

@@ -87,6 +87,7 @@ body {
   background-image: url('cat-todolist.jpeg');
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   pointer-events: none;
   z-index: 0;
   /* Dark mode: invert image → black bg + white sketch lines */
@@ -131,7 +132,6 @@ body {
   display: none;
   min-height: 100vh;
   width: 100%;
-  will-change: transform, opacity;
 }
 .screen.active {
   display: flex;
