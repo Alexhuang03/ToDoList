@@ -1484,5 +1484,70 @@ body {
   text-decoration: line-through;
 }
 
+/* ── COLOR PICKER INPUTS ── */
+.cp-inputs-container {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  align-items: center;
+}
+.cp-input-group {
+  display: flex;
+  align-items: center;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  height: 28px;
+}
+.cp-input-prefix {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  font-weight: 700;
+  margin-right: 4px;
+  user-select: none;
+}
+.cp-hex-input {
+  width: 58px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-family: monospace;
+  padding: 0;
+  text-transform: uppercase;
+}
+.cp-hex-input:focus, .cp-rgb-input:focus {
+  outline: none;
+}
+.cp-rgb-inputs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+.cp-rgb-inputs .cp-input-group {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 4px;
+}
+.cp-rgb-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  padding: 0;
+  text-align: center;
+}
+/* Remove default spinner for number inputs */
+.cp-rgb-input::-webkit-outer-spin-button,
+.cp-rgb-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.cp-rgb-input[type=number] {
+  -moz-appearance: textfield;
+}
+
 
 

@@ -1596,7 +1596,11 @@ $('#theme-toggle').addEventListener('click', () => {
       this.cursorSatVal = this.container.querySelector('.cp-cursor');
       this.cursorHue = this.container.querySelector('.cp-hue-cursor');
       this.previewSwatch = this.container.querySelector('.cp-preview-swatch');
-      this.hexLabel = this.container.querySelector('.cp-hex-label');
+      
+      this.hexInput = this.container.querySelector('.cp-hex-input');
+      this.rInput = this.container.querySelector('.r-input');
+      this.gInput = this.container.querySelector('.g-input');
+      this.bInput = this.container.querySelector('.b-input');
 
       this.onChange = onChange;
       this.ctxSatVal = this.canvasSatVal.getContext('2d', { willReadFrequently: true });
@@ -1674,7 +1678,16 @@ $('#theme-toggle').addEventListener('click', () => {
 
       const hex = this.getHex();
       this.previewSwatch.style.backgroundColor = hex;
-      this.hexLabel.textContent = hex;
+
+      if (document.activeElement !== this.hexInput) {
+        this.hexInput.value = hex.replace('#', '').toUpperCase();
+      }
+      const rgb = this.hexToRgb(hex);
+      if (rgb) {
+        if (document.activeElement !== this.rInput) this.rInput.value = rgb.r;
+        if (document.activeElement !== this.gInput) this.gInput.value = rgb.g;
+        if (document.activeElement !== this.bInput) this.bInput.value = rgb.b;
+      }
     }
 
     getHex() {
@@ -1754,6 +1767,62 @@ $('#theme-toggle').addEventListener('click', () => {
         isDraggingSV = false;
         isDraggingHue = false;
       });
+
+      // Inputs event listeners
+      const updateFromInputs = () => {
+        let hex = '';
+        if (document.activeElement === this.hexInput) {
+          let val = this.hexInput.value.trim();
+          if (!val.startsWith('#')) val = '#' + val;
+          if (/^#[0-9A-F]{6}$/i.test(val)) {
+            hex = val;
+          } else {
+            return;
+          }
+        } else {
+          const r = Math.max(0, Math.min(255, parseInt(this.rInput.value) || 0));
+          const g = Math.max(0, Math.min(255, parseInt(this.gInput.value) || 0));
+          const b = Math.max(0, Math.min(255, parseInt(this.bInput.value) || 0));
+          hex = this.rgbToHex(r, g, b);
+        }
+
+        const rgb = this.hexToRgb(hex);
+        if (rgb) {
+          const hsv = this.rgbToHsv(rgb.r, rgb.g, rgb.b);
+          this.currentHue = hsv.h;
+          this.currentSat = hsv.s * 100;
+          this.currentVal = hsv.v * 100;
+
+          this.drawSatValCanvas();
+
+          const wSV = this.canvasSatVal.width;
+          const hSV = this.canvasSatVal.height;
+          const xSV = (this.currentSat / 100) * wSV;
+          const ySV = (1 - (this.currentVal / 100)) * hSV;
+          this.cursorSatVal.style.left = `${xSV}px`;
+          this.cursorSatVal.style.top = `${ySV}px`;
+
+          const wH = this.canvasHue.width;
+          const xH = (this.currentHue / 360) * wH;
+          this.cursorHue.style.left = `${xH}px`;
+
+          this.previewSwatch.style.backgroundColor = hex;
+
+          if (document.activeElement !== this.hexInput) {
+            this.hexInput.value = hex.replace('#', '').toUpperCase();
+          }
+          if (document.activeElement !== this.rInput) this.rInput.value = rgb.r;
+          if (document.activeElement !== this.gInput) this.gInput.value = rgb.g;
+          if (document.activeElement !== this.bInput) this.bInput.value = rgb.b;
+
+          if (this.onChange) this.onChange(hex);
+        }
+      };
+
+      this.hexInput.addEventListener('input', updateFromInputs);
+      this.rInput.addEventListener('input', updateFromInputs);
+      this.gInput.addEventListener('input', updateFromInputs);
+      this.bInput.addEventListener('input', updateFromInputs);
     }
 
     hexToRgb(hex) {
