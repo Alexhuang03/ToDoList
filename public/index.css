@@ -1070,6 +1070,8 @@ body.screen-transitioning { overflow: hidden; }
   font-size: 0.78rem;
   cursor: pointer;
   transition: var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .btn-restore:hover { background: var(--accent-glow); }
 

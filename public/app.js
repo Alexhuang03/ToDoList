@@ -5,7 +5,7 @@ const API = {
   async req(method, path, body) {
     const res = await fetch('/api' + path, { method, headers: this.headers(), body: body ? JSON.stringify(body) : undefined });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+    if (!res.ok) throw new Error(data.error || t('server_error'));
     return data;
   },
   get(path) { return this.req('GET', path); },
@@ -311,7 +311,7 @@ $('#register-form').addEventListener('submit', async e => {
     currentUser = data.user;
     enterApp();
   } catch (err) {
-    $('#register-error').textContent = err.message;
+    $('#register-error').textContent = t(err.message);
   } finally {
     setLoading('register-btn', false);
   }
@@ -329,7 +329,7 @@ $('#login-form').addEventListener('submit', async e => {
     currentUser = data.user;
     enterApp();
   } catch (err) {
-    $('#login-error').textContent = err.message;
+    $('#login-error').textContent = t(err.message);
   } finally {
     setLoading('login-btn', false);
   }
@@ -543,7 +543,7 @@ $('#modal-confirm').addEventListener('click', async () => {
     $('#modal-overlay').classList.remove('active');
     toast(t('file_created'));
     renderHome();
-  } catch (err) { toast(t('error_prefix') + err.message); }
+  } catch (err) { toast(t('error_prefix') + t(err.message)); }
 });
 $('#new-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#modal-confirm').click(); } });
 
@@ -583,7 +583,7 @@ $('#edit-modal-confirm').addEventListener('click', async () => {
     $('#edit-modal-overlay').classList.remove('active');
     toast(t('file_modified'));
     renderHome();
-  } catch (err) { toast(t('error_prefix') + err.message); }
+  } catch (err) { toast(t('error_prefix') + t(err.message)); }
 });
 $('#edit-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#edit-modal-confirm').click(); } });
 
@@ -593,7 +593,7 @@ async function deleteFile(id) {
     await API.del(`/files/${id}`);
     toast(t('file_deleted'));
     renderHome();
-  } catch (err) { toast(t('error_prefix') + err.message); }
+  } catch (err) { toast(t('error_prefix') + t(err.message)); }
 }
 
 /* ===== SHARE MODAL ===== */
@@ -619,7 +619,7 @@ $('#share-add-btn').addEventListener('click', async () => {
     renderSharedUsers(file);
     toast(t('access_granted', email));
     renderHome();
-  } catch (err) { toast(t('error_prefix') + err.message); }
+  } catch (err) { toast(t('error_prefix') + t(err.message)); }
 });
 
 function renderSharedUsers(f) {
@@ -637,7 +637,7 @@ function renderSharedUsers(f) {
         const { file } = await API.del(`/files/${shareFileId}/share/${btn.dataset.removeShare}`);
         renderSharedUsers(file);
         toast(t('collaborator_removed'));
-      } catch (err) { toast(t('error_prefix') + err.message); }
+      } catch (err) { toast(t('error_prefix') + t(err.message)); }
     });
   });
 }
@@ -654,7 +654,7 @@ $('#empty-trash-btn').addEventListener('click', async () => {
     await API.del('/trash');
     toast(t('trash_emptied'));
     renderTrash();
-  } catch (err) { toast(t('error_prefix') + err.message); }
+  } catch (err) { toast(t('error_prefix') + t(err.message)); }
 });
 
 async function renderTrash() {
@@ -684,10 +684,10 @@ async function renderTrash() {
           await API.post(`/trash/restore/${btn.dataset.restore}`);
           toast(t('item_restored'));
           renderTrash();
-        } catch (err) { toast(t('error_prefix') + err.message); }
+        } catch (err) { toast(t('error_prefix') + t(err.message)); }
       });
     });
-  } catch (err) { container.innerHTML = `<p style="color:var(--text-dim)">${err.message}</p>`; }
+  } catch (err) { container.innerHTML = `<p style="color:var(--text-dim)">${t(err.message)}</p>`; }
 }
 
 /* ===== FILE DETAIL ===== */
@@ -723,7 +723,7 @@ function startTitleEdit() {
         const { file } = await API.put(`/files/${currentFile._id}`, { name: newName });
         currentFile = file;
         toast(t('title_modified'));
-      } catch (err) { toast(t('error_prefix') + err.message); }
+      } catch (err) { toast(t('error_prefix') + t(err.message)); }
     }
     wrapper.innerHTML = '';
     const h2 = document.createElement('h2');
@@ -757,7 +757,7 @@ async function saveFile() {
   try {
     const { file } = await API.put(`/files/${currentFile._id}`, { sections: currentFile.sections });
     currentFile = file;
-  } catch (err) { toast(t('error_prefix') + err.message); }
+  } catch (err) { toast(t('error_prefix') + t(err.message)); }
 }
 
 /* ===== POLLING (collaboration) ===== */
@@ -989,7 +989,7 @@ function renderSections() {
 
   currentFile.sections.forEach(sec => {
     const doneCount = sec.missions.filter(m => m.done).length;
-    html += `<div class="section"><div class="section-header"><span class="section-tag" data-secedit="${esc(sec.name)}" title="Cliquer pour renommer"># ${esc(sec.name)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
+    html += `<div class="section"><div class="section-header"><span class="section-tag" data-secedit="${esc(sec.name)}" title="${t('click_to_rename')}"># ${esc(sec.name)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
     
     if (!isShared) {
       const sorted = [...sec.missions].sort((a, b) => {
@@ -1285,7 +1285,7 @@ function bindMissionEvents() {
     currentFile.sections.forEach(s => { const m = s.missions.find(x => x.id === mid); if (m) mission = m; });
     if (!mission) return;
     const input = document.createElement('input');
-    input.type = 'text'; input.className = 'mission-text-input'; input.placeholder = 'Nouvelle sous-mission...';
+    input.type = 'text'; input.className = 'mission-text-input'; input.placeholder = t('new_subtask_placeholder');
     input.style.marginLeft = '3.2rem'; input.style.marginTop = '0.3rem'; input.style.marginBottom = '0.3rem';
     missionEl.parentNode.insertBefore(input, missionEl.nextSibling);
     input.focus();
@@ -1786,7 +1786,7 @@ $('#theme-toggle').addEventListener('click', () => {
           currentUser = data.user;
         }
       } catch (err) {
-        toast(t('error_prefix') + err.message);
+        toast(t('error_prefix') + t(err.message));
       }
     });
   }
@@ -1802,7 +1802,7 @@ $('#theme-toggle').addEventListener('click', () => {
       updateLanguage(currentLanguage);
       toast(t('name_updated'));
     } catch (err) {
-      toast(t('error_prefix') + err.message);
+      toast(t('error_prefix') + t(err.message));
     }
   });
 
