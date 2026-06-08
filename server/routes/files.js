@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const File = require('../models/File');
+const Trash = require('../models/Trash');
 const User = require('../models/User');
 const { authMiddleware } = require('./auth');
 const router = express.Router();
@@ -91,10 +92,18 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     if (file.ownerId.toString() !== req.userId.toString()) {
       return res.status(403).json({ error: 'Seul le propriétaire peut supprimer ce fichier' });
     }
-    // Marquer comme supprimé (corbeille) : on stocke dans un champ dédié
-    file.trash.push({ type: 'file', data: { name: file.name, sections: file.sections }, deletedAt: new Date() });
-    // On ne supprime pas vraiment, on archive — géré côté corbeille
-    // Pour simplifier : suppression réelle, la corbeille est gérée dans le frontend
+    // Marquer comme supprimé (corbeille) : on stocke dans le Trash model dédié de l'owner
+    let trashDoc = await Trash.findOne({ userId: req.userId });
+    if (!trashDoc) {
+      trashDoc = new Trash({ userId: req.userId, items: [] });
+    }
+    trashDoc.items.push({
+      type: 'file',
+      data: { name: file.name, sections: file.sections },
+      deletedAt: new Date()
+    });
+    await trashDoc.save();
+
     await File.findByIdAndDelete(req.params.id);
     res.json({ message: 'Fichier supprimé' });
   } catch (err) {
