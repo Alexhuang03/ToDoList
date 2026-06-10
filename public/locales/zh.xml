@@ -137,4 +137,5 @@
   <entry key="Déjà partagé avec cet utilisateur">已与此用户分享</entry>
   <entry key="Seul le propriétaire peut modifier le partage">仅所有者可以修改协作设置</entry>
   <entry key="Élément introuvable">找不到此项目</entry>
+  <entry key="filter_opacity_title">滤镜不透明度</entry>
 </translations>

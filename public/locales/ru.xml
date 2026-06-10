@@ -137,4 +137,5 @@
   <entry key="Déjà partagé avec cet utilisateur">Уже предоставлен доступ этому пользователю</entry>
   <entry key="Seul le propriétaire peut modifier le partage">Изменить настройки доступа может только владелец</entry>
   <entry key="Élément introuvable">Элемент не найден</entry>
+  <entry key="filter_opacity_title">Непрозрачность фильтра</entry>
 </translations>

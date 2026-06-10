@@ -2157,6 +2157,30 @@ $('#theme-toggle').addEventListener('click', () => {
 
   applyWallpaper = function (cfg, persistToDb = true) {
     const screens = ['#home-screen', '#file-screen', '#trash-screen'];
+    
+    let opacityVal = 0.60;
+    if (cfg.opacity !== undefined) {
+      opacityVal = Number(cfg.opacity);
+    } else if (cfg.type === 'image') {
+      opacityVal = 0.55;
+    } else if (cfg.type === 'color') {
+      opacityVal = 0;
+    }
+    document.documentElement.style.setProperty('--overlay-opacity', opacityVal);
+
+    const opacityRow = $('#wp-opacity-row');
+    if (opacityRow) {
+      if (cfg.type === 'color') {
+        opacityRow.style.display = 'none';
+      } else {
+        opacityRow.style.display = 'flex';
+        const slider = $('#filter-opacity-slider');
+        const label = $('#filter-opacity-val');
+        if (slider) slider.value = Math.round(opacityVal * 100);
+        if (label) label.textContent = Math.round(opacityVal * 100) + '%';
+      }
+    }
+
     if (cfg.type === 'default') {
       wallpaperStyleTag.textContent = '';
     } else if (cfg.type === 'color') {
@@ -2183,10 +2207,10 @@ $('#theme-toggle').addEventListener('click', () => {
           opacity: 1 !important;
         }
         ${screens.map(s => s + '::after').join(', ')} {
-          background: rgba(10,10,16,0.55) !important;
+          background: rgba(10,10,16, var(--overlay-opacity, 0.55)) !important;
         }
         [data-theme="light"] ${screens.map(s => s + '::after').join(', [data-theme="light"] ')} {
-          background: rgba(244,245,247,0.65) !important;
+          background: rgba(244,245,247, var(--overlay-opacity, 0.65)) !important;
         }
       `;
       const cb = $('#wp-fit-contain');
@@ -2265,6 +2289,28 @@ $('#theme-toggle').addEventListener('click', () => {
       cfg.fit = $('#wp-fit-contain').checked ? 'contain' : 'cover';
       applyWallpaper(cfg);
     }
+  });
+
+  $('#filter-opacity-slider').addEventListener('input', e => {
+    const val = parseInt(e.target.value);
+    $('#filter-opacity-val').textContent = val + '%';
+    document.documentElement.style.setProperty('--overlay-opacity', val / 100);
+  });
+
+  $('#filter-opacity-slider').addEventListener('change', e => {
+    const val = parseInt(e.target.value);
+    let wp = localStorage.getItem('tdl_wallpaper_' + (currentUser ? currentUser._id : ''));
+    if (!wp && currentUser && currentUser.wallpaper) {
+      wp = currentUser.wallpaper;
+    }
+    let cfg = { type: 'default' };
+    if (wp) {
+      try {
+        cfg = JSON.parse(wp);
+      } catch (_) {}
+    }
+    cfg.opacity = val / 100;
+    applyWallpaper(cfg, true);
   });
 
   $('#wp-upload-btn').addEventListener('click', () => $('#wallpaper-file-input').click());

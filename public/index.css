@@ -109,14 +109,14 @@ body {
   content: '';
   position: fixed;
   inset: 0;
-  background: rgba(10, 10, 16, 0.60);
+  background: rgba(10, 10, 16, var(--overlay-opacity, 0.60));
   pointer-events: none;
   z-index: 0;
 }
 [data-theme="light"] #home-screen::after,
 [data-theme="light"] #file-screen::after,
 [data-theme="light"] #trash-screen::after {
-  background: rgba(244, 245, 247, 0.72);
+  background: rgba(244, 245, 247, var(--overlay-opacity, 0.72));
 }
 
 /* All direct children sit above both pseudo-elements */
@@ -1676,6 +1676,49 @@ body.screen-transitioning { overflow: hidden; }
 .settings-select-field option {
   background: var(--bg-card);
   color: var(--text);
+}
+
+/* ── SETTINGS RANGE SLIDER ── */
+.settings-range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  margin: 0.5rem 0;
+  transition: background 0.2s;
+}
+.settings-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s, background-color 0.2s;
+}
+.settings-range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--accent-light);
+}
+.settings-range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s, background-color 0.2s;
+}
+.settings-range-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: var(--accent-light);
 }
 
 
