@@ -976,6 +976,12 @@ function renderSections() {
   if (!currentFile) return;
   const container = $('#sections-container');
   const emptyEl = $('#empty-state');
+  
+  // Sort sections alphabetically by name
+  if (currentFile.sections) {
+    currentFile.sections.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }
+
   const totalMissions = countTasks(currentFile);
   const doneMissions = countDone(currentFile);
   if (totalMissions === 0) { container.innerHTML = ''; emptyEl.classList.remove('hidden'); } else { emptyEl.classList.add('hidden'); }
@@ -987,9 +993,37 @@ function renderSections() {
   const isShared = currentFile.sharedWith && currentFile.sharedWith.length > 0;
   const myToken = currentUser ? (currentUser.name || currentUser.email) : '';
 
+  // Render index sidebar on the right
+  const sidebar = $('#category-index-sidebar');
+  if (sidebar) {
+    if (totalMissions === 0 || !currentFile.sections || currentFile.sections.length === 0) {
+      sidebar.style.display = 'none';
+      sidebar.innerHTML = '';
+    } else {
+      sidebar.style.display = 'flex';
+      let sidebarHtml = '';
+      currentFile.sections.forEach(sec => {
+        const firstLetter = sec.name.trim().charAt(0).toUpperCase() || '#';
+        const secId = 'sec-' + sec.name.replace(/\s+/g, '-');
+        sidebarHtml += `<button class="category-index-item" data-target="${secId}" title="${esc(sec.name)}">${esc(firstLetter)}</button>`;
+      });
+      sidebar.innerHTML = sidebarHtml;
+      sidebar.querySelectorAll('.category-index-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-target');
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    }
+  }
+
   currentFile.sections.forEach(sec => {
     const doneCount = sec.missions.filter(m => m.done).length;
-    html += `<div class="section"><div class="section-header"><span class="section-tag" data-secedit="${esc(sec.name)}" title="${t('click_to_rename')}"># ${esc(sec.name)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
+    const secId = 'sec-' + sec.name.replace(/\s+/g, '-');
+    html += `<div class="section" id="${secId}"><div class="section-header"><span class="section-tag" data-secedit="${esc(sec.name)}" title="${t('click_to_rename')}"># ${esc(sec.name)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
     
     if (!isShared) {
       const sorted = [...sec.missions].sort((a, b) => {
