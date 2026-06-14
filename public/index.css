@@ -794,7 +794,7 @@ body.screen-transitioning { overflow: hidden; }
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-md);
+  border-radius: 20px;
   box-shadow: var(--shadow-sm);
   z-index: 100;
   max-height: 70vh;
@@ -870,7 +870,7 @@ body.screen-transitioning { overflow: hidden; }
   opacity: 1;
   transform: translateY(-50%) scale(1);
 }
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .category-index-sidebar {
     display: none !important;
   }
