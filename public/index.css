@@ -398,6 +398,214 @@ body.screen-transitioning { overflow: hidden; }
   margin-bottom: 1rem;
   line-height: 1.5;
 }
+/* ===== AUTH GITHUB LINK ===== */
+.auth-github-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+.auth-github-link:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+  background: var(--bg-card);
+  transform: translateY(-1px);
+}
+.auth-github-link svg {
+  flex-shrink: 0;
+}
+
+/* ===== ABOUT SCREEN ===== */
+#about-screen {
+  background: var(--bg);
+  overflow-y: auto;
+}
+#about-screen.active { display: flex; flex-direction: column; align-items: center; }
+
+.about-container {
+  width: 100%;
+  max-width: 720px;
+  padding: 2.5rem 2rem 3rem;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.about-back-btn {
+  position: absolute;
+  top: 2.5rem;
+  left: 2rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.about-back-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+  transform: translateX(-2px);
+}
+
+.about-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-top: 1rem;
+}
+.about-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+.about-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.4rem;
+}
+.about-tagline {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.about-section h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  color: var(--text);
+}
+.about-section p {
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.about-section p strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.about-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.about-feature-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  transition: all 0.25s ease;
+}
+.about-feature-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.about-feature-icon {
+  font-size: 1.5rem;
+  display: block;
+  margin-bottom: 0.6rem;
+}
+.about-feature-card h3 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--text);
+}
+.about-feature-card p {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin: 0;
+}
+.about-feature-card code {
+  background: var(--bg-card);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: var(--accent-light);
+}
+
+.about-footer {
+  margin-top: 3rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.about-github-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+.about-github-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+  background: var(--bg-card);
+  transform: translateY(-1px);
+}
+.about-github-btn svg {
+  flex-shrink: 0;
+}
+.about-credit {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.about-credit strong {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .about-features {
+    grid-template-columns: 1fr;
+  }
+  .about-container {
+    padding: 2rem 1.25rem 2.5rem;
+  }
+  .about-back-btn {
+    top: 2rem;
+    left: 1.25rem;
+  }
+}
 
 /* ===== APP HEADER ===== */
 .app-header {

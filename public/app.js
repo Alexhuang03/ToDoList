@@ -298,6 +298,9 @@ $('#show-login').addEventListener('click', e => { e.preventDefault(); $('#regist
 $('#show-forgot').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.remove('hidden'); $('#forgot-email').focus(); });
 $('#forgot-back').addEventListener('click', e => { e.preventDefault(); $('#forgot-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
 
+$('#auth-brand-link').addEventListener('click', () => { transitionTo('about-screen', 'left'); });
+$('#about-back-btn').addEventListener('click', () => { transitionTo('auth-screen', 'right'); });
+
 $('#register-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('#register-name').value.trim();
