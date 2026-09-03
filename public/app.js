@@ -800,14 +800,28 @@ function getCollabs() {
   return [...new Set(list)];
 }
 
+const GENERAL_SECTION_NAMES = ['général', 'general', '常规', '通用', 'общее', 'générale', 'generale'];
+
+function isGeneralSection(name) {
+  if (!name) return false;
+  return GENERAL_SECTION_NAMES.includes(name.trim().toLowerCase());
+}
+
+function getGeneralSectionDisplay() {
+  const trans = t('section_general');
+  return (trans && trans !== 'section_general') ? trans : 'General';
+}
+
 function parseTags(val) {
-  let sectionName = 'Général';
+  let sectionName = '';
   let cleanText = val;
 
   const hashMatch = val.match(/#(\S+)/);
   if (hashMatch) {
     sectionName = hashMatch[1];
     cleanText = cleanText.replace(/#\S+/g, '').trim();
+  } else {
+    sectionName = getGeneralSectionDisplay();
   }
 
   const collabs = getCollabs();
@@ -852,7 +866,7 @@ function parseTags(val) {
   let tagStart = -1;          // index of '#' or '@' in input value
 
   function getSections() {
-    return currentFile ? currentFile.sections.map(s => s.name) : [];
+    return currentFile ? currentFile.sections.map(s => isGeneralSection(s.name) ? getGeneralSectionDisplay() : s.name) : [];
   }
 
   function findMatch(typed, type) {
@@ -954,8 +968,20 @@ function parseTags(val) {
     const { sectionName, assignee, cleanText } = parseTags(val);
     if (!cleanText) return;
 
-    let sec = currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
-    if (!sec) { sec = { name: sectionName, missions: [] }; currentFile.sections.push(sec); }
+    let sec = null;
+    if (isGeneralSection(sectionName)) {
+      sec = currentFile.sections.find(s => isGeneralSection(s.name));
+      if (!sec) {
+        sec = { name: getGeneralSectionDisplay(), missions: [] };
+        currentFile.sections.push(sec);
+      }
+    } else {
+      sec = currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
+      if (!sec) {
+        sec = { name: sectionName, missions: [] };
+        currentFile.sections.push(sec);
+      }
+    }
     
     sec.missions.push({
       id: uid(),
@@ -982,7 +1008,11 @@ function renderSections() {
   
   // Sort sections alphabetically by name
   if (currentFile.sections) {
-    currentFile.sections.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    currentFile.sections.sort((a, b) => {
+      const nameA = isGeneralSection(a.name) ? getGeneralSectionDisplay() : a.name;
+      const nameB = isGeneralSection(b.name) ? getGeneralSectionDisplay() : b.name;
+      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+    });
   }
 
   const totalMissions = countTasks(currentFile);
@@ -1006,9 +1036,11 @@ function renderSections() {
       sidebar.style.display = 'flex';
       let sidebarHtml = '';
       currentFile.sections.forEach(sec => {
-        const firstLetter = sec.name.trim().charAt(0).toUpperCase() || '#';
+        const isGen = isGeneralSection(sec.name);
+        const displayName = isGen ? getGeneralSectionDisplay() : sec.name;
+        const firstLetter = displayName.trim().charAt(0).toUpperCase() || '#';
         const secId = 'sec-' + sec.name.replace(/\s+/g, '-');
-        sidebarHtml += `<button class="category-index-item" data-target="${secId}" title="${esc(sec.name)}">${esc(firstLetter)}</button>`;
+        sidebarHtml += `<button class="category-index-item" data-target="${secId}" title="${esc(displayName)}">${esc(firstLetter)}</button>`;
       });
       sidebar.innerHTML = sidebarHtml;
       sidebar.querySelectorAll('.category-index-item').forEach(btn => {
@@ -1024,9 +1056,11 @@ function renderSections() {
   }
 
   currentFile.sections.forEach(sec => {
+    const isGen = isGeneralSection(sec.name);
+    const displayName = isGen ? getGeneralSectionDisplay() : sec.name;
     const doneCount = sec.missions.filter(m => m.done).length;
     const secId = 'sec-' + sec.name.replace(/\s+/g, '-');
-    html += `<div class="section" id="${secId}"><div class="section-header"><span class="section-tag" data-secedit="${esc(sec.name)}" title="${t('click_to_rename')}"># ${esc(sec.name)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
+    html += `<div class="section" id="${secId}"><div class="section-header"><span class="section-tag" data-secedit="${esc(sec.name)}" data-displayname="${esc(displayName)}" title="${t('click_to_rename')}"># ${esc(displayName)}</span><span class="section-count">${doneCount}/${sec.missions.length}</span></div>`;
     
     if (!isShared) {
       const sorted = [...sec.missions].sort((a, b) => {
@@ -1182,12 +1216,13 @@ function bindMissionEvents() {
   // ── Inline rename section tag ──
   document.querySelectorAll('[data-secedit]').forEach(span => span.addEventListener('click', () => {
     const oldName = span.dataset.secedit;
+    const currentDisplay = span.dataset.displayname || oldName;
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'section-tag-input';
-    input.value = oldName;
+    input.value = currentDisplay;
     // auto-size to content
-    input.style.width = Math.max(oldName.length * 9, 60) + 'px';
+    input.style.width = Math.max(currentDisplay.length * 9, 60) + 'px';
     span.replaceWith(input);
     input.focus();
     input.select();
@@ -1196,7 +1231,7 @@ function bindMissionEvents() {
     const save = async () => {
       if (saved) return; saved = true;
       const newName = input.value.trim();
-      if (newName && newName.toLowerCase() !== oldName.toLowerCase()) {
+      if (newName && newName.toLowerCase() !== oldName.toLowerCase() && newName.toLowerCase() !== currentDisplay.toLowerCase()) {
         // Check no other section has this name
         const conflict = currentFile.sections.find(s => s.name.toLowerCase() === newName.toLowerCase() && s.name !== oldName);
         if (conflict) { toast(t('section_exists')); renderSections(); return; }
@@ -1249,7 +1284,7 @@ function bindMissionEvents() {
     if (!m) return;
 
     let editValue = m.text;
-    if (secName.toLowerCase() !== 'général') {
+    if (!isGeneralSection(secName)) {
       editValue += ` #${secName}`;
     }
     if (m.assignedTo) {
@@ -1280,13 +1315,18 @@ function bindMissionEvents() {
         if (foundMission) {
           foundMission.text = cleanText;
           foundMission.assignedTo = assignee;
-          if (sectionName.toLowerCase() !== currentSec.name.toLowerCase()) {
+          const isSameSection = (isGeneralSection(currentSec.name) && isGeneralSection(sectionName))
+            || (currentSec.name.toLowerCase() === sectionName.toLowerCase());
+
+          if (!isSameSection) {
             const idx = currentSec.missions.findIndex(x => x.id === mid);
             if (idx !== -1) currentSec.missions.splice(idx, 1);
 
-            let targetSec = currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
+            let targetSec = isGeneralSection(sectionName)
+              ? currentFile.sections.find(s => isGeneralSection(s.name))
+              : currentFile.sections.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
             if (!targetSec) {
-              targetSec = { name: sectionName, missions: [] };
+              targetSec = { name: isGeneralSection(sectionName) ? getGeneralSectionDisplay() : sectionName, missions: [] };
               currentFile.sections.push(targetSec);
             }
             targetSec.missions.push(foundMission);
