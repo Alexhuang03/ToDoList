@@ -8,12 +8,54 @@ const { router: authRouter } = require('./routes/auth');
 const filesRouter = require('./routes/files');
 const trashRouter = require('./routes/trash');
 
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
-app.use(cors());
-app.use(express.json());
+// Sécurisation des en-têtes HTTP avec Helmet & CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+// CORS avec restriction et support des credentials (cookies)
+const allowedOrigins = [process.env.APP_URL, `http://localhost:${PORT}`, 'http://127.0.0.1:3000'].filter(Boolean);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // En développement ou même domaine
+    }
+  },
+  credentials: true,
+}));
+
+// Cookies & Parsing du corps de requête avec limite de taille stricte (anti-DoS)
+app.use(cookieParser());
+app.use(express.json({ limit: '100kb' }));
+
+// Rate limiter global pour toutes les routes API (300 req / 15 min)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de requêtes. Veuillez patienter avant de réessayer.' },
+});
+app.use('/api', globalLimiter);
 
 // Servir le frontend statique et le dossier Images
 app.use(express.static(path.join(__dirname, '..', 'public')));

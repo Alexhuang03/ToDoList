@@ -24,10 +24,12 @@ userSchema.methods.verifyPassword = function (plain) {
   return bcrypt.compare(plain, this.passwordHash);
 };
 
-// Ne jamais exposer le hash dans les réponses JSON
+// Ne jamais exposer le hash ni les tokens de réinitialisation dans les réponses JSON
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.passwordHash;
+  delete obj.resetToken;
+  delete obj.resetTokenExpiry;
   return obj;
 };
 

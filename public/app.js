@@ -1,9 +1,19 @@
 /* ===== API LAYER ===== */
 const API = {
   token() { return localStorage.getItem('tdl_token'); },
-  headers() { return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token()}` }; },
+  headers() {
+    const h = { 'Content-Type': 'application/json' };
+    const t = this.token();
+    if (t) h['Authorization'] = `Bearer ${t}`;
+    return h;
+  },
   async req(method, path, body) {
-    const res = await fetch('/api' + path, { method, headers: this.headers(), body: body ? JSON.stringify(body) : undefined });
+    const res = await fetch('/api' + path, {
+      method,
+      headers: this.headers(),
+      credentials: 'same-origin',
+      body: body ? JSON.stringify(body) : undefined
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || t('server_error'));
     return data;
@@ -338,7 +348,8 @@ $('#login-form').addEventListener('submit', async e => {
   }
 });
 
-$('#logout-btn').addEventListener('click', () => {
+$('#logout-btn').addEventListener('click', async () => {
+  try { await API.post('/auth/logout'); } catch (_) {}
   localStorage.removeItem('tdl_token');
   currentUser = null;
   currentFile = null;
@@ -458,7 +469,6 @@ $('#reset-form').addEventListener('submit', async e => {
     $('#reset-form').classList.remove('hidden');
     return;
   }
-  if (!API.token()) { showScreen('auth-screen'); return; }
   try {
     const data = await API.get('/auth/me');
     currentUser = data.user;
@@ -491,7 +501,7 @@ async function renderHome() {
           ${isOwner ? `<button class="icon-btn" data-share="${f._id}" title="${t('share')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>` : ''}
           ${isOwner ? `<button class="icon-btn danger" data-delete="${f._id}" title="${t('delete')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>` : ''}
         </div>
-        <div class="file-card-name">${f.emoji ? f.emoji + ' ' : ''}${esc(f.name)}${collab ? ` <span style="font-size:0.75rem;opacity:0.7;">${collab}</span>` : ''}</div>
+        <div class="file-card-name">${f.emoji ? esc(f.emoji) + ' ' : ''}${esc(f.name)}${collab ? ` <span style="font-size:0.75rem;opacity:0.7;">${collab}</span>` : ''}</div>
         <div class="file-card-meta">${t('missions_status', total, done)}</div>
       </div>`;
     });
@@ -509,7 +519,7 @@ async function renderHome() {
       });
     });
   } catch (err) {
-    grid.innerHTML = `<p style="color:var(--text-dim)">${err.message}</p>`;
+    grid.innerHTML = `<p style="color:var(--text-dim)">${esc(err.message)}</p>`;
   }
 }
 
@@ -679,7 +689,7 @@ async function renderTrash() {
         label = `✓ ${esc(item.data.text)}`;
         origin = t('origin_prefix', item.origin || '');
       }
-      return `<div class="trash-item"><div class="trash-item-info"><span class="trash-item-name">${label}</span><span class="trash-item-origin">${origin}</span></div><button class="btn-restore" data-restore="${i}">${t('restore_btn')}</button></div>`;
+      return `<div class="trash-item"><div class="trash-item-info"><span class="trash-item-name">${label}</span><span class="trash-item-origin">${esc(origin)}</span></div><button class="btn-restore" data-restore="${i}">${t('restore_btn')}</button></div>`;
     }).join('');
     container.querySelectorAll('[data-restore]').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -690,7 +700,7 @@ async function renderTrash() {
         } catch (err) { toast(t('error_prefix') + t(err.message)); }
       });
     });
-  } catch (err) { container.innerHTML = `<p style="color:var(--text-dim)">${t(err.message)}</p>`; }
+  } catch (err) { container.innerHTML = `<p style="color:var(--text-dim)">${esc(t(err.message))}</p>`; }
 }
 
 /* ===== FILE DETAIL ===== */
@@ -2261,10 +2271,11 @@ $('#theme-toggle').addEventListener('click', () => {
     if (cfg.type === 'default') {
       wallpaperStyleTag.textContent = '';
     } else if (cfg.type === 'color') {
+      const safeColor = String(cfg.value || '#1a1a30').replace(/[^#a-zA-Z0-9,().\s%-]/g, '');
       wallpaperStyleTag.textContent = `
         ${screens.map(s => s + '::before').join(', ')} {
           background-image: none !important;
-          background: ${cfg.value} !important;
+          background: ${safeColor} !important;
           filter: none !important;
           opacity: 1 !important;
         }
@@ -2273,10 +2284,11 @@ $('#theme-toggle').addEventListener('click', () => {
         }
       `;
     } else if (cfg.type === 'image') {
-      const fitMode = cfg.fit || 'cover';
+      const fitMode = ['cover', 'contain', 'auto'].includes(cfg.fit) ? cfg.fit : 'cover';
+      const safeUrl = String(cfg.value || '').replace(/['"\\()\r\n]/g, '');
       wallpaperStyleTag.textContent = `
         ${screens.map(s => s + '::before').join(', ')} {
-          background-image: url('${cfg.value}') !important;
+          background-image: url('${safeUrl}') !important;
           background-size: ${fitMode} !important;
           background-position: center !important;
           background-repeat: no-repeat !important;

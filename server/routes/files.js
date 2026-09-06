@@ -6,11 +6,24 @@ const User = require('../models/User');
 const { authMiddleware } = require('./auth');
 const router = express.Router();
 
+// Helper : valider un ObjectId MongoDB
+function isValidObjectId(id) {
+  return typeof id === 'string' && mongoose.Types.ObjectId.isValid(id);
+}
+
+// Helper : assainir l'emoji pour éviter toute injection
+function sanitizeEmoji(emoji) {
+  if (!emoji || typeof emoji !== 'string') return '';
+  return emoji.replace(/[<>"'/`\\]/g, '').trim().slice(0, 10);
+}
+
 // Helper : vérifier que l'user a accès au fichier (propriétaire OU collaborateur)
 function hasAccess(file, userId) {
+  if (!file || !userId) return false;
   const uid = userId.toString();
-  return file.ownerId.toString() === uid ||
-    file.sharedWith.some(id => id.toString() === uid);
+  const ownerStr = file.ownerId ? (file.ownerId._id ? file.ownerId._id.toString() : file.ownerId.toString()) : '';
+  return ownerStr === uid ||
+    (Array.isArray(file.sharedWith) && file.sharedWith.some(id => (id._id ? id._id.toString() : id.toString()) === uid));
 }
 
 // GET /api/files — Lister tous les fichiers accessibles
@@ -36,8 +49,15 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { name, emoji } = req.body;
-    if (!name) return res.status(400).json({ error: 'Nom requis' });
-    const file = new File({ name, emoji: emoji || '', ownerId: req.userId });
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'Nom requis' });
+    }
+    if (name.trim().length > 100) {
+      return res.status(400).json({ error: 'Nom trop long (100 caractères maximum)' });
+    }
+
+    const cleanEmoji = sanitizeEmoji(emoji);
+    const file = new File({ name: name.trim(), emoji: cleanEmoji, ownerId: req.userId });
     await file.save();
     await file.populate('ownerId', 'name email');
     res.status(201).json({ file });
@@ -50,6 +70,9 @@ router.post('/', authMiddleware, async (req, res) => {
 // GET /api/files/:id — Détail d'un fichier
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: 'Identifiant de fichier invalide' });
+    }
     const file = await File.findById(req.params.id)
       .populate('ownerId', 'name email')
       .populate('sharedWith', 'name email');
@@ -65,14 +88,26 @@ router.get('/:id', authMiddleware, async (req, res) => {
 // PUT /api/files/:id — Mettre à jour un fichier (sections + missions)
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: 'Identifiant de fichier invalide' });
+    }
     const file = await File.findById(req.params.id);
     if (!file) return res.status(404).json({ error: 'Fichier introuvable' });
     if (!hasAccess(file, req.userId)) return res.status(403).json({ error: 'Accès refusé' });
 
     const { name, emoji, sections } = req.body;
-    if (name !== undefined) file.name = name;
-    if (emoji !== undefined) file.emoji = emoji;
-    if (sections !== undefined) file.sections = sections;
+    if (name !== undefined) {
+      if (typeof name !== 'string' || !name.trim()) return res.status(400).json({ error: 'Nom invalide' });
+      file.name = name.trim().slice(0, 100);
+    }
+    if (emoji !== undefined) {
+      file.emoji = sanitizeEmoji(emoji);
+    }
+    if (sections !== undefined) {
+      if (!Array.isArray(sections)) return res.status(400).json({ error: 'Format sections invalide' });
+      file.sections = sections;
+    }
+
     await file.save();
     await file.populate('ownerId', 'name email');
     await file.populate('sharedWith', 'name email');
@@ -86,12 +121,17 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // DELETE /api/files/:id — Supprimer un fichier (soft delete : va dans la corbeille globale de l'owner)
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: 'Identifiant de fichier invalide' });
+    }
     const file = await File.findById(req.params.id);
     if (!file) return res.status(404).json({ error: 'Fichier introuvable' });
+
     // Seul le propriétaire peut supprimer
     if (file.ownerId.toString() !== req.userId.toString()) {
       return res.status(403).json({ error: 'Seul le propriétaire peut supprimer ce fichier' });
     }
+
     // Marquer comme supprimé (corbeille) : on stocke dans le Trash model dédié de l'owner
     let trashDoc = await Trash.findOne({ userId: req.userId });
     if (!trashDoc) {
@@ -115,15 +155,20 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 // POST /api/files/:id/share — Partager avec un utilisateur par email
 router.post('/:id/share', authMiddleware, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ error: 'Identifiant de fichier invalide' });
+    }
     const file = await File.findById(req.params.id);
     if (!file) return res.status(404).json({ error: 'Fichier introuvable' });
     if (file.ownerId.toString() !== req.userId.toString()) {
       return res.status(403).json({ error: 'Seul le propriétaire peut partager ce fichier' });
     }
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email requis' });
 
-    const targetUser = await User.findOne({ email });
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') return res.status(400).json({ error: 'Email requis' });
+
+    const cleanEmail = email.trim().toLowerCase();
+    const targetUser = await User.findOne({ email: cleanEmail });
     if (!targetUser) return res.status(404).json({ error: 'Aucun utilisateur avec cet email' });
     if (targetUser._id.toString() === req.userId.toString()) {
       return res.status(400).json({ error: 'Vous êtes déjà le propriétaire' });
@@ -143,9 +188,12 @@ router.post('/:id/share', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE /api/files/:id/share/:userId — Retirer un collaborateur
+// DELETE /api/files/:id/share/:uid — Retirer un collaborateur
 router.delete('/:id/share/:uid', authMiddleware, async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id) || !isValidObjectId(req.params.uid)) {
+      return res.status(400).json({ error: 'Identifiant invalide' });
+    }
     const file = await File.findById(req.params.id);
     if (!file) return res.status(404).json({ error: 'Fichier introuvable' });
     if (file.ownerId.toString() !== req.userId.toString()) {
@@ -162,4 +210,6 @@ router.delete('/:id/share/:uid', authMiddleware, async (req, res) => {
   }
 });
 
+router.hasAccess = hasAccess;
+router.isValidObjectId = isValidObjectId;
 module.exports = router;
