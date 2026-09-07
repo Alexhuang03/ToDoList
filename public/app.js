@@ -558,7 +558,10 @@ $('#modal-confirm').addEventListener('click', async () => {
     renderHome();
   } catch (err) { toast(t('error_prefix') + t(err.message)); }
 });
-$('#new-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#modal-confirm').click(); } });
+$('#new-file-name').addEventListener('keydown', e => {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Enter') { e.preventDefault(); $('#modal-confirm').click(); }
+});
 
 /* ===== EDIT FILE MODAL ===== */
 let editFileId = null;
@@ -598,7 +601,10 @@ $('#edit-modal-confirm').addEventListener('click', async () => {
     renderHome();
   } catch (err) { toast(t('error_prefix') + t(err.message)); }
 });
-$('#edit-file-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#edit-modal-confirm').click(); } });
+$('#edit-file-name').addEventListener('keydown', e => {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Enter') { e.preventDefault(); $('#edit-modal-confirm').click(); }
+});
 
 /* ===== DELETE FILE ===== */
 async function deleteFile(id) {
@@ -748,6 +754,7 @@ function startTitleEdit() {
   }
   input.addEventListener('blur', saveTitle);
   input.addEventListener('keydown', e => {
+    if (e.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
     if (e.key === 'Escape') { input.value = currentFile.name; input.blur(); }
   });
@@ -767,6 +774,7 @@ $('#back-btn').addEventListener('click', () => {
 });
 
 async function saveFile() {
+  if (!currentFile) return;
   try {
     const { file } = await API.put(`/files/${currentFile._id}`, { sections: currentFile.sections });
     currentFile = file;
@@ -778,8 +786,17 @@ function startPolling() {
   stopPolling();
   pollInterval = setInterval(async () => {
     if (!currentFile) return;
+    // Ne pas rafraîchir en arrière-plan si l'utilisateur est en train d'éditer ou de saisir du texte
+    const isEditing = document.querySelector('.mission-text-input, .section-tag-input, .file-title-input')
+      || (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA'));
+    if (isEditing) return;
+
     try {
       const { file } = await API.get(`/files/${currentFile._id}`);
+      // Si le fichier n'a pas changé sur le serveur, ne pas déclencher de re-render inutile
+      if (file && file.updatedAt && currentFile.updatedAt && file.updatedAt === currentFile.updatedAt) {
+        return;
+      }
       currentFile = file;
       renderSections();
     } catch {}
@@ -956,6 +973,7 @@ function parseTags(val) {
   input.addEventListener('input', updateGhost);
 
   input.addEventListener('keydown', async e => {
+    if (e.isComposing || e.keyCode === 229) return;
     if (e.key === 'Tab') {
       if (currentSuggestion) {
         e.preventDefault();
@@ -1253,6 +1271,7 @@ function bindMissionEvents() {
     };
     input.addEventListener('blur', save);
     input.addEventListener('keydown', e => {
+      if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter') { e.preventDefault(); save(); }
       if (e.key === 'Escape') { saved = true; renderSections(); }
     });
@@ -1349,7 +1368,11 @@ function bindMissionEvents() {
       renderSections();
     };
     input.addEventListener('blur', save);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') { saved = true; renderSections(); } });
+    input.addEventListener('keydown', e => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Enter') { e.preventDefault(); save(); }
+      if (e.key === 'Escape') { saved = true; renderSections(); }
+    });
   }));
 
   document.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', async () => {
@@ -1391,7 +1414,11 @@ function bindMissionEvents() {
       renderSections();
     };
     input.addEventListener('blur', doAdd);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } if (e.key === 'Escape') { saved = true; renderSections(); } });
+    input.addEventListener('keydown', e => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Enter') { e.preventDefault(); doAdd(); }
+      if (e.key === 'Escape') { saved = true; renderSections(); }
+    });
   }));
 
   document.querySelectorAll('[data-toggle]').forEach(btn => btn.addEventListener('click', e => {
@@ -1468,7 +1495,11 @@ function bindMissionEvents() {
       renderSections();
     };
     input.addEventListener('blur', save);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') { saved = true; renderSections(); } });
+    input.addEventListener('keydown', e => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Enter') { e.preventDefault(); save(); }
+      if (e.key === 'Escape') { saved = true; renderSections(); }
+    });
   }));
 
   document.querySelectorAll('[data-stdel]').forEach(btn => btn.addEventListener('click', async () => {
