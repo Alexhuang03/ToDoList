@@ -784,18 +784,27 @@ async function saveFile() {
 /* ===== POLLING (collaboration) ===== */
 function startPolling() {
   stopPolling();
+  // Ne démarrer le rafraîchissement d'arrière-plan QUE si le fichier est partagé avec des collaborateurs
+  if (!currentFile || !currentFile.sharedWith || currentFile.sharedWith.length === 0) return;
+
   pollInterval = setInterval(async () => {
     if (!currentFile) return;
-    // Ne pas rafraîchir en arrière-plan si l'utilisateur est en train d'éditer ou de saisir du texte
+    if (!currentFile.sharedWith || currentFile.sharedWith.length === 0) {
+      stopPolling();
+      return;
+    }
+    // Ne jamais rafraîchir en arrière-plan si l'utilisateur est en train d'écrire
     const isEditing = document.querySelector('.mission-text-input, .section-tag-input, .file-title-input')
       || (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA'));
     if (isEditing) return;
 
     try {
       const { file } = await API.get(`/files/${currentFile._id}`);
-      // Si le fichier n'a pas changé sur le serveur, ne pas déclencher de re-render inutile
-      if (file && file.updatedAt && currentFile.updatedAt && file.updatedAt === currentFile.updatedAt) {
-        return;
+      // Si le contenu des sections est strictement identique, ne jamais toucher au DOM
+      if (file && file.sections && currentFile.sections) {
+        if (JSON.stringify(file.sections) === JSON.stringify(currentFile.sections)) {
+          return;
+        }
       }
       currentFile = file;
       renderSections();
@@ -1269,7 +1278,12 @@ function bindMissionEvents() {
       }
       renderSections();
     };
-    input.addEventListener('blur', save);
+    input.addEventListener('blur', () => {
+      if (!saved) {
+        saved = true;
+        renderSections();
+      }
+    });
     input.addEventListener('keydown', e => {
       if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter') { e.preventDefault(); save(); }
@@ -1367,7 +1381,12 @@ function bindMissionEvents() {
       }
       renderSections();
     };
-    input.addEventListener('blur', save);
+    input.addEventListener('blur', () => {
+      if (!saved) {
+        saved = true;
+        renderSections();
+      }
+    });
     input.addEventListener('keydown', e => {
       if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter') { e.preventDefault(); save(); }
@@ -1494,7 +1513,12 @@ function bindMissionEvents() {
       }
       renderSections();
     };
-    input.addEventListener('blur', save);
+    input.addEventListener('blur', () => {
+      if (!saved) {
+        saved = true;
+        renderSections();
+      }
+    });
     input.addEventListener('keydown', e => {
       if (e.isComposing || e.keyCode === 229) return;
       if (e.key === 'Enter') { e.preventDefault(); save(); }
