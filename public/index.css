@@ -804,21 +804,21 @@ body.screen-transitioning { overflow: hidden; }
 
 .file-main {
   padding: 1.5rem 2rem;
-  max-width: 1560px;
+  max-width: 1720px;
   margin: 0 auto;
   width: 100%;
   flex: 1;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 1.5rem;
+  gap: 2.5rem;
   box-sizing: border-box;
 }
 
 /* Panneau Gauche : Description du dossier */
 .folder-sidebar-left {
-  width: 300px;
-  min-width: 270px;
+  width: 350px;
+  min-width: 280px;
   flex-shrink: 0;
   background: var(--bg-sidebar-glass);
   backdrop-filter: blur(16px);
@@ -1041,7 +1041,7 @@ body.screen-transitioning { overflow: hidden; }
 /* Colonne Centrale */
 .file-center-column {
   flex: 1;
-  max-width: 740px;
+  max-width: 780px;
   min-width: 0;
   width: 100%;
 }
@@ -1055,8 +1055,8 @@ body.screen-transitioning { overflow: hidden; }
 
 /* Panneau Droit : Notes de mission */
 .mission-sidebar-right {
-  width: 300px;
-  min-width: 270px;
+  width: 350px;
+  min-width: 280px;
   flex-shrink: 0;
   background: var(--bg-sidebar-glass);
   backdrop-filter: blur(16px);
@@ -1151,6 +1151,20 @@ body.screen-transitioning { overflow: hidden; }
 .subtask-actions .btn-notes.has-notes {
   color: var(--accent-light) !important;
   opacity: 1 !important;
+}
+
+/* Intermediate Desktop Breakpoint (1100px - 1380px) */
+@media (min-width: 1100px) and (max-width: 1380px) {
+  .file-main {
+    gap: 1.75rem;
+  }
+  .folder-sidebar-left,
+  .mission-sidebar-right {
+    width: 300px;
+  }
+  .file-center-column {
+    max-width: 720px;
+  }
 }
 
 /* Responsive / Mobile Breakpoint (< 1100px) */
