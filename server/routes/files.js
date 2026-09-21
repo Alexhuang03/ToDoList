@@ -95,13 +95,17 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (!file) return res.status(404).json({ error: 'Fichier introuvable' });
     if (!hasAccess(file, req.userId)) return res.status(403).json({ error: 'Accès refusé' });
 
-    const { name, emoji, sections } = req.body;
+    const { name, emoji, sections, description } = req.body;
     if (name !== undefined) {
       if (typeof name !== 'string' || !name.trim()) return res.status(400).json({ error: 'Nom invalide' });
       file.name = name.trim().slice(0, 100);
     }
     if (emoji !== undefined) {
       file.emoji = sanitizeEmoji(emoji);
+    }
+    if (description !== undefined) {
+      if (typeof description !== 'string') return res.status(400).json({ error: 'Description invalide' });
+      file.description = description.slice(0, 2000);
     }
     if (sections !== undefined) {
       if (!Array.isArray(sections)) return res.status(400).json({ error: 'Format sections invalide' });

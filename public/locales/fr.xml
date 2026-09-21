@@ -148,4 +148,20 @@
   <entry key="terms_btn_close">J'ai compris</entry>
   <entry key="legal_and_terms">Conditions &amp; Confidentialité</entry>
   <entry key="Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité">Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité</entry>
+  <entry key="about_folder">À propos du dossier</entry>
+  <entry key="folder_description_placeholder">Ajouter une description ou des objectifs pour ce dossier...</entry>
+  <entry key="folder_description_empty">Aucune description. Cliquez ici pour en ajouter une.</entry>
+  <entry key="mission_notes">Notes de la mission</entry>
+  <entry key="mission_notes_placeholder">Écrivez des notes détaillées, contexte, liens pour cette mission...</entry>
+  <entry key="select_mission_notes">Sélectionnez une mission pour voir ou écrire des notes.</entry>
+  <entry key="notes_saved">Notes enregistrées</entry>
+  <entry key="description_saved">Description enregistrée</entry>
+  <entry key="save_notes_btn">Enregistrer</entry>
+  <entry key="save_desc_btn">Enregistrer</entry>
+  <entry key="close_panel">Fermer</entry>
+  <entry key="tasks_label">Tâches</entry>
+  <entry key="progression_label">Progression</entry>
+  <entry key="mission_notes_empty">Aucune note. Cliquez ici pour en ajouter.</entry>
+  <entry key="click_to_edit">Cliquer pour modifier</entry>
+  <entry key="click_to_add">Cliquer pour ajouter</entry>
 </translations>

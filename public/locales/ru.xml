@@ -148,4 +148,20 @@
   <entry key="terms_btn_close">Понятно</entry>
   <entry key="legal_and_terms">Условия и конфиденциальность</entry>
   <entry key="Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité">Вы должны принять условия использования и политику конфиденциальности</entry>
+  <entry key="about_folder">О папке</entry>
+  <entry key="folder_description_placeholder">Добавьте описание или цели для этой папки...</entry>
+  <entry key="folder_description_empty">Нет описания. Нажмите здесь, чтобы добавить.</entry>
+  <entry key="mission_notes">Заметки к задаче</entry>
+  <entry key="mission_notes_placeholder">Напишите подробные заметки, контекст, ссылки для этой задачи...</entry>
+  <entry key="select_mission_notes">Выберите задачу, чтобы просмотреть или написать заметки.</entry>
+  <entry key="notes_saved">Заметки сохранены</entry>
+  <entry key="description_saved">Описание сохранено</entry>
+  <entry key="save_notes_btn">Сохранить</entry>
+  <entry key="save_desc_btn">Сохранить</entry>
+  <entry key="close_panel">Закрыть</entry>
+  <entry key="tasks_label">Задачи</entry>
+  <entry key="progression_label">Прогресс</entry>
+  <entry key="mission_notes_empty">Нет заметок. Нажмите здесь, чтобы добавить.</entry>
+  <entry key="click_to_edit">Нажмите для изменения</entry>
+  <entry key="click_to_add">Нажмите для добавления</entry>
 </translations>

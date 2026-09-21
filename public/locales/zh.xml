@@ -148,4 +148,20 @@
   <entry key="terms_btn_close">我知道了</entry>
   <entry key="legal_and_terms">条款与隐私</entry>
   <entry key="Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité">您必须同意使用条款和隐私政策</entry>
+  <entry key="about_folder">关于此文件夹</entry>
+  <entry key="folder_description_placeholder">为此文件夹添加描述或目标...</entry>
+  <entry key="folder_description_empty">暂无描述。点击此处添加。</entry>
+  <entry key="mission_notes">任务备注</entry>
+  <entry key="mission_notes_placeholder">为此任务编写详细备注、背景信息、链接...</entry>
+  <entry key="select_mission_notes">选择一个任务以查看或编写备注。</entry>
+  <entry key="notes_saved">备注已保存</entry>
+  <entry key="description_saved">描述已保存</entry>
+  <entry key="save_notes_btn">保存</entry>
+  <entry key="save_desc_btn">保存</entry>
+  <entry key="close_panel">关闭</entry>
+  <entry key="tasks_label">任务</entry>
+  <entry key="progression_label">进度</entry>
+  <entry key="mission_notes_empty">暂无备注。点击此处添加。</entry>
+  <entry key="click_to_edit">点击进行修改</entry>
+  <entry key="click_to_add">点击添加</entry>
 </translations>

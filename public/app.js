@@ -151,6 +151,8 @@ async function updateLanguage(lang) {
     if (activeScreen.id === 'home-screen') {
       renderHome().catch(console.error);
     } else if (activeScreen.id === 'file-screen') {
+      renderFolderDescription();
+      renderMissionNotesView();
       renderSections();
     } else if (activeScreen.id === 'trash-screen') {
       renderTrash().catch(console.error);
@@ -797,16 +799,314 @@ async function renderTrash() {
   } catch (err) { container.innerHTML = `<p style="color:var(--text-dim)">${esc(t(err.message))}</p>`; }
 }
 
-/* ===== FILE DETAIL ===== */
+/* ===== FILE DETAIL & 3-COLUMN PANELS ===== */
+let selectedMissionId = null;
+let selectedSubtaskId = null;
+let currentNotesInitialValue = '';
+
 function openFile(f) {
   currentFile = f;
+  selectedMissionId = null;
+  selectedSubtaskId = null;
+  currentNotesInitialValue = '';
   $('#file-title').textContent = (f.emoji ? f.emoji + ' ' : '') + f.name;
   $('#quick-entry').value = '';
   updateQuickEntryPlaceholder();
+  renderFolderDescription();
+  closeMissionNotes();
   renderSections();
   transitionTo('file-screen', 'left');
   setTimeout(() => $('#quick-entry').focus(), 100);
   startPolling();
+}
+
+/* --- Left Panel: Folder Description & Objectives --- */
+function renderFolderDescription() {
+  if (!currentFile) return;
+  const countEl = $('#folder-stat-count');
+  if (countEl) {
+    const total = countTasks(currentFile);
+    const done = countDone(currentFile);
+    countEl.textContent = `${done} / ${total}`;
+  }
+
+  const editorEl = $('#folder-desc-editor');
+  if (editorEl && !editorEl.classList.contains('hidden')) return;
+
+  const emptyEl = $('#folder-desc-empty');
+  const descEl = $('#folder-desc-text');
+  const saveBtn = $('#save-folder-desc-btn');
+
+  if (saveBtn) saveBtn.classList.add('hidden');
+
+  const desc = (currentFile.description || '').trim();
+  if (desc) {
+    if (descEl) {
+      descEl.textContent = currentFile.description;
+      descEl.classList.remove('hidden');
+    }
+    if (emptyEl) emptyEl.classList.add('hidden');
+  } else {
+    if (descEl) descEl.classList.add('hidden');
+    if (emptyEl) emptyEl.classList.remove('hidden');
+  }
+}
+
+function startEditFolderDescription() {
+  if (!currentFile) return;
+  const emptyEl = $('#folder-desc-empty');
+  const descEl = $('#folder-desc-text');
+  const editorEl = $('#folder-desc-editor');
+  const input = $('#folder-desc-input');
+  const saveBtn = $('#save-folder-desc-btn');
+  if (!input || !editorEl) return;
+
+  if (!editorEl.classList.contains('hidden')) return;
+
+  const currentDesc = currentFile.description || '';
+  input.value = currentDesc;
+  if (descEl) descEl.classList.add('hidden');
+  if (emptyEl) emptyEl.classList.add('hidden');
+  editorEl.classList.remove('hidden');
+  if (saveBtn) saveBtn.classList.add('hidden');
+  input.focus();
+  input.select();
+}
+
+async function saveFolderDescription() {
+  if (!currentFile) return;
+  const input = $('#folder-desc-input');
+  const editorEl = $('#folder-desc-editor');
+  if (!input) return;
+  const newDesc = input.value.trim().slice(0, 2000);
+  if (newDesc !== (currentFile.description || '')) {
+    try {
+      const { file } = await API.put(`/files/${currentFile._id}`, { description: newDesc });
+      currentFile.description = file.description;
+      toast(t('description_saved'));
+    } catch (err) {
+      toast(t('error_prefix') + t(err.message));
+    }
+  }
+  if (editorEl) editorEl.classList.add('hidden');
+  renderFolderDescription();
+}
+
+function cancelFolderDescription() {
+  const editorEl = $('#folder-desc-editor');
+  if (editorEl) editorEl.classList.add('hidden');
+  renderFolderDescription();
+}
+
+/* --- Right Panel: Mission & Subtask Notes & Details --- */
+function findMissionById(mid) {
+  if (!currentFile || !currentFile.sections) return null;
+  for (const sec of currentFile.sections) {
+    const m = sec.missions.find(x => x.id === mid);
+    if (m) return { mission: m, section: sec };
+  }
+  return null;
+}
+
+function findSubtaskById(mid, stid) {
+  if (!currentFile || !currentFile.sections) return null;
+  for (const sec of currentFile.sections) {
+    const m = sec.missions.find(x => x.id === mid);
+    if (m && m.subtasks) {
+      const st = m.subtasks.find(x => x.id === stid);
+      if (st) return { subtask: st, parentMission: m, section: sec };
+    }
+  }
+  return null;
+}
+
+function renderMissionNotesView() {
+  const emptyEl = $('#mission-notes-empty');
+  const emptySelectedEl = $('#mission-notes-empty-selected');
+  const textEl = $('#mission-notes-text');
+  const editorEl = $('#mission-notes-editor');
+  const saveBtn = $('#save-mission-notes-btn');
+
+  if (saveBtn) saveBtn.classList.add('hidden');
+  if (editorEl) editorEl.classList.add('hidden');
+
+  if (!selectedMissionId && !selectedSubtaskId) {
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    if (emptySelectedEl) emptySelectedEl.classList.add('hidden');
+    if (textEl) textEl.classList.add('hidden');
+    return;
+  }
+
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  const notes = (currentNotesInitialValue || '').trim();
+  if (notes) {
+    if (textEl) {
+      textEl.textContent = currentNotesInitialValue;
+      textEl.classList.remove('hidden');
+    }
+    if (emptySelectedEl) emptySelectedEl.classList.add('hidden');
+  } else {
+    if (textEl) textEl.classList.add('hidden');
+    if (emptySelectedEl) emptySelectedEl.classList.remove('hidden');
+  }
+}
+
+function startEditMissionNotes() {
+  if (!selectedMissionId && !selectedSubtaskId) return;
+  const emptyEl = $('#mission-notes-empty');
+  const emptySelectedEl = $('#mission-notes-empty-selected');
+  const textEl = $('#mission-notes-text');
+  const editorEl = $('#mission-notes-editor');
+  const input = $('#mission-notes-input');
+  const saveBtn = $('#save-mission-notes-btn');
+
+  if (emptyEl) emptyEl.classList.add('hidden');
+  if (emptySelectedEl) emptySelectedEl.classList.add('hidden');
+  if (textEl) textEl.classList.add('hidden');
+  if (editorEl) editorEl.classList.remove('hidden');
+
+  if (input) {
+    input.value = currentNotesInitialValue;
+    input.focus();
+    input.select();
+  }
+  if (saveBtn) saveBtn.classList.add('hidden');
+}
+
+function openMissionNotes(mid) {
+  selectedMissionId = mid;
+  selectedSubtaskId = null;
+  const found = findMissionById(mid);
+  if (!found) {
+    closeMissionNotes();
+    return;
+  }
+
+  const { mission } = found;
+  const titleEl = $('#mission-sidebar-title');
+  const statusEl = $('#mission-notes-status');
+  const sidebar = $('#mission-sidebar-right');
+  const overlay = $('#mission-sidebar-overlay');
+
+  currentNotesInitialValue = mission.notes || '';
+  if (titleEl) titleEl.textContent = mission.text;
+  if (statusEl) statusEl.textContent = '';
+
+  renderMissionNotesView();
+
+  document.querySelectorAll('.mission-item').forEach(el => {
+    if (el.dataset.mid === mid) el.classList.add('active-selected');
+    else el.classList.remove('active-selected');
+  });
+  document.querySelectorAll('.subtask-item').forEach(el => el.classList.remove('active-selected'));
+
+  if (sidebar) sidebar.classList.add('open');
+  if (overlay) overlay.classList.add('active');
+}
+
+function openSubtaskNotes(mid, stid) {
+  selectedMissionId = null;
+  selectedSubtaskId = stid;
+  const found = findSubtaskById(mid, stid);
+  if (!found) {
+    closeMissionNotes();
+    return;
+  }
+
+  const { subtask, parentMission } = found;
+  const titleEl = $('#mission-sidebar-title');
+  const statusEl = $('#mission-notes-status');
+  const sidebar = $('#mission-sidebar-right');
+  const overlay = $('#mission-sidebar-overlay');
+
+  currentNotesInitialValue = subtask.notes || '';
+  if (titleEl) {
+    titleEl.innerHTML = `<span style="display:block; font-size:0.75rem; color:var(--text-dim); font-weight:normal; margin-bottom:3px;">↳ ${esc(parentMission.text)}</span>${esc(subtask.text)}`;
+  }
+  if (statusEl) statusEl.textContent = '';
+
+  renderMissionNotesView();
+
+  document.querySelectorAll('.mission-item').forEach(el => el.classList.remove('active-selected'));
+  document.querySelectorAll('.subtask-item').forEach(el => {
+    if (el.dataset.stid === stid) el.classList.add('active-selected');
+    else el.classList.remove('active-selected');
+  });
+
+  if (sidebar) sidebar.classList.add('open');
+  if (overlay) overlay.classList.add('active');
+}
+
+function closeMissionNotes() {
+  selectedMissionId = null;
+  selectedSubtaskId = null;
+  currentNotesInitialValue = '';
+  const titleEl = $('#mission-sidebar-title');
+  const sidebar = $('#mission-sidebar-right');
+  const overlay = $('#mission-sidebar-overlay');
+
+  if (titleEl) titleEl.textContent = '';
+  renderMissionNotesView();
+
+  document.querySelectorAll('.mission-item.active-selected, .subtask-item.active-selected').forEach(el => {
+    el.classList.remove('active-selected');
+  });
+
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
+}
+
+async function saveMissionNotes() {
+  if (!currentFile) return;
+  const input = $('#mission-notes-input');
+  if (!input) return;
+  const notesText = input.value.trim().slice(0, 2000);
+
+  if (selectedSubtaskId) {
+    let targetSt = null;
+    for (const sec of currentFile.sections) {
+      for (const m of sec.missions) {
+        if (m.subtasks) {
+          const st = m.subtasks.find(x => x.id === selectedSubtaskId);
+          if (st) { targetSt = st; break; }
+        }
+      }
+      if (targetSt) break;
+    }
+    if (!targetSt) return;
+    targetSt.notes = notesText;
+    try {
+      await saveFile();
+      currentNotesInitialValue = targetSt.notes || '';
+      toast(t('notes_saved'));
+      const btn = document.querySelector(`.btn-notes[data-stnotes="${selectedSubtaskId}"]`);
+      if (btn) {
+        if (notesText) btn.classList.add('has-notes');
+        else btn.classList.remove('has-notes');
+      }
+      renderMissionNotesView();
+    } catch (err) {
+      toast(t('error_prefix') + t(err.message));
+    }
+  } else if (selectedMissionId) {
+    const found = findMissionById(selectedMissionId);
+    if (!found) return;
+    found.mission.notes = notesText;
+    try {
+      await saveFile();
+      currentNotesInitialValue = found.mission.notes || '';
+      toast(t('notes_saved'));
+      const btn = document.querySelector(`.btn-notes[data-notes="${selectedMissionId}"]`);
+      if (btn) {
+        if (notesText) btn.classList.add('has-notes');
+        else btn.classList.remove('has-notes');
+      }
+      renderMissionNotesView();
+    } catch (err) {
+      toast(t('error_prefix') + t(err.message));
+    }
+  }
 }
 
 function startTitleEdit() {
@@ -853,9 +1153,87 @@ $('#file-title-wrapper').addEventListener('click', e => {
   if (e.target.classList.contains('file-title-header')) startTitleEdit();
 });
 
+// Event listeners for folder description
+$('#folder-desc-empty')?.addEventListener('click', startEditFolderDescription);
+$('#folder-desc-text')?.addEventListener('click', startEditFolderDescription);
+$('#save-folder-desc-btn')?.addEventListener('click', saveFolderDescription);
+$('#folder-desc-input')?.addEventListener('input', () => {
+  const saveBtn = $('#save-folder-desc-btn');
+  const input = $('#folder-desc-input');
+  if (!saveBtn || !input) return;
+  const currentDesc = (currentFile && currentFile.description) || '';
+  if (input.value !== currentDesc) {
+    saveBtn.classList.remove('hidden');
+  } else {
+    saveBtn.classList.add('hidden');
+  }
+});
+$('#folder-desc-input')?.addEventListener('blur', (e) => {
+  if (e.relatedTarget && e.relatedTarget.id === 'save-folder-desc-btn') return;
+  const input = $('#folder-desc-input');
+  const currentDesc = (currentFile && currentFile.description) || '';
+  if (input && input.value === currentDesc) {
+    cancelFolderDescription();
+  }
+});
+$('#folder-desc-input')?.addEventListener('keydown', e => {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    cancelFolderDescription();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    saveFolderDescription();
+  }
+});
+
+// Event listeners for mission notes panel
+$('#mission-notes-empty-selected')?.addEventListener('click', startEditMissionNotes);
+$('#mission-notes-text')?.addEventListener('click', startEditMissionNotes);
+$('#close-mission-notes-btn')?.addEventListener('click', closeMissionNotes);
+$('#mission-sidebar-overlay')?.addEventListener('click', closeMissionNotes);
+$('#save-mission-notes-btn')?.addEventListener('click', saveMissionNotes);
+$('#mission-notes-input')?.addEventListener('input', () => {
+  const saveBtn = $('#save-mission-notes-btn');
+  const input = $('#mission-notes-input');
+  if (!saveBtn || !input) return;
+  if (input.value !== currentNotesInitialValue) {
+    saveBtn.classList.remove('hidden');
+  } else {
+    saveBtn.classList.add('hidden');
+  }
+});
+$('#mission-notes-input')?.addEventListener('blur', (e) => {
+  if (e.relatedTarget && e.relatedTarget.id === 'save-mission-notes-btn') return;
+  const input = $('#mission-notes-input');
+  if (input && input.value === currentNotesInitialValue) {
+    renderMissionNotesView();
+  }
+});
+$('#mission-notes-input')?.addEventListener('keydown', e => {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    renderMissionNotesView();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    saveMissionNotes();
+  }
+});
+
+// Mobile toggle for folder panel
+document.querySelector('.folder-sidebar-header')?.addEventListener('click', (e) => {
+  if (window.innerWidth < 1100 && !e.target.closest('button, textarea, input')) {
+    const panel = $('#folder-sidebar-left');
+    if (panel) panel.classList.toggle('mobile-collapsed');
+  }
+});
 
 $('#back-btn').addEventListener('click', () => {
   stopPolling();
+  closeMissionNotes();
   currentFile = null;
   renderHome();
   transitionTo('home-screen', 'right');
@@ -895,6 +1273,7 @@ function startPolling() {
         }
       }
       currentFile = file;
+      renderFolderDescription();
       renderSections();
     } catch {}
   }, 5000);
@@ -1146,6 +1525,41 @@ function renderSections() {
   const pct = totalMissions > 0 ? Math.round((doneMissions / totalMissions) * 100) : 0;
   $('#progress-fill').style.width = pct + '%';
   $('#progress-text').textContent = pct + '%';
+
+  // Sync stats in left folder sidebar
+  const statCount = $('#folder-stat-count');
+  if (statCount) statCount.textContent = `${doneMissions} / ${totalMissions}`;
+
+  // Sync active mission or subtask selection in right panel
+  if (selectedMissionId) {
+    const found = findMissionById(selectedMissionId);
+    if (found) {
+      const titleEl = $('#mission-sidebar-title');
+      if (titleEl) titleEl.textContent = found.mission.text;
+    } else {
+      closeMissionNotes();
+    }
+  } else if (selectedSubtaskId) {
+    let foundSt = null;
+    let foundParent = null;
+    for (const sec of currentFile.sections) {
+      for (const m of sec.missions) {
+        if (m.subtasks) {
+          const st = m.subtasks.find(x => x.id === selectedSubtaskId);
+          if (st) { foundSt = st; foundParent = m; break; }
+        }
+      }
+      if (foundSt) break;
+    }
+    if (foundSt) {
+      const titleEl = $('#mission-sidebar-title');
+      if (titleEl) {
+        titleEl.innerHTML = `<span style="display:block; font-size:0.75rem; color:var(--text-dim); font-weight:normal; margin-bottom:3px;">↳ ${esc(foundParent.text)}</span>${esc(foundSt.text)}`;
+      }
+    } else {
+      closeMissionNotes();
+    }
+  }
   let html = '';
   
   const isShared = currentFile.sharedWith && currentFile.sharedWith.length > 0;
@@ -1165,7 +1579,7 @@ function renderSections() {
         const displayName = isGen ? getGeneralSectionDisplay() : sec.name;
         const firstLetter = displayName.trim().charAt(0).toUpperCase() || '#';
         const secId = 'sec-' + sec.name.replace(/\s+/g, '-');
-        sidebarHtml += `<button class="category-index-item" data-target="${secId}" title="${esc(displayName)}">${esc(firstLetter)}</button>`;
+        sidebarHtml += `<button class="category-index-item" data-target="${secId}" aria-label="${esc(displayName)}"><span class="category-index-letter">${esc(firstLetter)}</span><span class="category-index-tooltip"># ${esc(displayName)}</span></button>`;
       });
       sidebar.innerHTML = sidebarHtml;
       sidebar.querySelectorAll('.category-index-item').forEach(btn => {
@@ -1307,7 +1721,9 @@ function renderMission(m, secName) {
         ? `<button class="icon-btn" data-stassignbtn="${st.id}" data-mid="${m.id}" title="Assigner des membres"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></button>`
         : '';
 
-      sub += `<div class="subtask-item${st.done ? ' completed' : ''}" data-stid="${st.id}">
+      const isStSelected = selectedSubtaskId === st.id;
+      const stHasNotes = st.notes && st.notes.trim().length > 0;
+      sub += `<div class="subtask-item${st.done ? ' completed' : ''}${isStSelected ? ' active-selected' : ''}" data-stid="${st.id}">
         <button class="subtask-check${st.done ? ' checked' : ''}" data-stcheck="${st.id}" data-mid="${m.id}"></button>
         <span class="subtask-text" data-stedit="${st.id}" data-mid="${m.id}">${esc(st.text)}</span>
         ${stDateBadge}
@@ -1315,13 +1731,16 @@ function renderMission(m, secName) {
         <div class="subtask-actions">
           ${stAssignBtn}
           <button class="icon-btn" data-stdatepick="${st.id}" data-mid="${m.id}" data-maxdate="${mDueDateStr}" title="Date d'échéance"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+          <button class="icon-btn btn-notes${stHasNotes ? ' has-notes' : ''}" data-stnotes="${st.id}" data-mid="${m.id}" title="${t('mission_notes')}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
           <button class="icon-btn danger" data-stdel="${st.id}" data-mid="${m.id}" title="Supprimer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
         </div>
       </div>`;
     });
     sub += '</div>';
   }
-  return `<div class="mission-item${m.done ? ' completed' : ''}" data-mid="${m.id}" data-sec="${esc(secName)}">
+  const isSelected = selectedMissionId === m.id;
+  const hasNotes = m.notes && m.notes.trim().length > 0;
+  return `<div class="mission-item${m.done ? ' completed' : ''}${isSelected ? ' active-selected' : ''}" data-mid="${m.id}" data-sec="${esc(secName)}">
     ${teamworkBadge}
     <button class="mission-check${m.done ? ' checked' : ''}" data-check="${m.id}"></button>
     ${arrow}
@@ -1330,6 +1749,7 @@ function renderMission(m, secName) {
     <div class="mission-actions">
       ${assignBtn}
       <button class="icon-btn" data-datepick="${m.id}" title="Date d'échéance"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+      <button class="icon-btn btn-notes${hasNotes ? ' has-notes' : ''}" data-notes="${m.id}" title="${t('mission_notes')}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
       <button class="icon-btn" data-addsub="${m.id}" title="Ajouter sous-mission"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       <button class="icon-btn danger" data-del="${m.id}" title="Supprimer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
     </div>
@@ -1484,6 +1904,18 @@ function bindMissionEvents() {
 
   document.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', async () => {
     const mid = btn.dataset.del;
+    if (selectedMissionId === mid) {
+      closeMissionNotes();
+    }
+    if (selectedSubtaskId) {
+      for (const s of currentFile.sections) {
+        const m = s.missions.find(x => x.id === mid);
+        if (m && m.subtasks && m.subtasks.some(st => st.id === selectedSubtaskId)) {
+          closeMissionNotes();
+          break;
+        }
+      }
+    }
     currentFile.sections.forEach(s => {
       const idx = s.missions.findIndex(x => x.id === mid);
       if (idx !== -1) {
@@ -1616,6 +2048,9 @@ function bindMissionEvents() {
 
   document.querySelectorAll('[data-stdel]').forEach(btn => btn.addEventListener('click', async () => {
     const stid = btn.dataset.stdel, mid = btn.dataset.mid;
+    if (selectedSubtaskId === stid) {
+      closeMissionNotes();
+    }
     currentFile.sections.forEach(s => {
       const m = s.missions.find(x => x.id === mid);
       if (m && m.subtasks) {
@@ -1684,6 +2119,21 @@ function bindMissionEvents() {
     const mid = el.dataset.mid;
     const stid = el.dataset.stassign || el.dataset.stassignbtn;
     showAssigneeDropdown(el, mid, stid);
+  }));
+
+  // ── Mission Notes Panel Trigger (Pencil icon) ──
+  document.querySelectorAll('[data-notes]').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const mid = btn.dataset.notes;
+    openMissionNotes(mid);
+  }));
+
+  // ── Subtask Notes Panel Trigger (Pencil icon) ──
+  document.querySelectorAll('[data-stnotes]').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const stid = btn.dataset.stnotes;
+    const mid = btn.dataset.mid;
+    openSubtaskNotes(mid, stid);
   }));
 }
 
