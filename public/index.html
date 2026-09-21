@@ -29,38 +29,44 @@
 
       <!-- LOGIN FORM -->
       <form id="login-form" class="auth-form" autocomplete="off">
-        <h2>Login</h2>
+        <h2 data-i18n="login_title">Login</h2>
         <div class="input-group">
-          <label for="login-email">Email Address</label>
-          <input type="email" id="login-email" placeholder="you@example.com" required>
+          <label for="login-email" data-i18n="email_label">Email Address</label>
+          <input type="email" id="login-email" placeholder="you@example.com" data-i18n-placeholder="email_placeholder" required>
         </div>
         <div class="input-group">
-          <label for="login-password">Password</label>
-          <input type="password" id="login-password" placeholder="••••••••" required>
+          <label for="login-password" data-i18n="password_label">Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" data-i18n-placeholder="password_placeholder" required>
         </div>
-        <button type="submit" class="btn-primary" id="login-btn">Login</button>
-        <p class="auth-switch"><span>Don't have an account?</span> <a href="#" id="show-register">Sign Up</a></p>
-        <p class="auth-switch"><a href="#" id="show-forgot" class="auth-forgot">Forgot Password?</a></p>
+        <button type="submit" class="btn-primary" id="login-btn" data-i18n="login_btn">Login</button>
+        <p class="auth-switch"><span data-i18n="no_account">Don't have an account?</span> <a href="#" id="show-register" data-i18n="show_register">Sign Up</a></p>
+        <p class="auth-switch"><a href="#" id="show-forgot" class="auth-forgot" data-i18n="forgot_password_link">Forgot Password?</a></p>
         <p id="login-error" class="auth-error"></p>
       </form>
 
       <!-- REGISTER FORM -->
       <form id="register-form" class="auth-form hidden" autocomplete="off">
-        <h2>Create an Account</h2>
+        <h2 data-i18n="register_title">Create an Account</h2>
         <div class="input-group">
-          <label for="register-name">Full Name</label>
-          <input type="text" id="register-name" placeholder="John Doe" required>
+          <label for="register-name" data-i18n="name_label">Full Name</label>
+          <input type="text" id="register-name" placeholder="John Doe" data-i18n-placeholder="name_placeholder" required>
         </div>
         <div class="input-group">
-          <label for="register-email">Email Address</label>
-          <input type="email" id="register-email" placeholder="you@example.com" required>
+          <label for="register-email" data-i18n="email_label">Email Address</label>
+          <input type="email" id="register-email" placeholder="you@example.com" data-i18n-placeholder="email_placeholder" required>
         </div>
         <div class="input-group">
-          <label for="register-password">Password</label>
-          <input type="password" id="register-password" placeholder="At least 6 characters" required minlength="6">
+          <label for="register-password" data-i18n="password_label">Password</label>
+          <input type="password" id="register-password" placeholder="At least 6 characters" data-i18n-placeholder="register_password_placeholder" required minlength="6">
         </div>
-        <button type="submit" class="btn-primary" id="register-btn">Create my account</button>
-        <p class="auth-switch"><span>Already have an account?</span> <a href="#" id="show-login">Login</a></p>
+        <div class="terms-group">
+          <input type="checkbox" id="register-terms" required>
+          <label for="register-terms" class="terms-label" data-i18n-html="terms_checkbox_label">
+            J'accepte les <a href="#" id="open-terms-link" class="terms-link">Conditions d'Utilisation</a> et la <a href="#" id="open-privacy-link" class="terms-link">Politique de Confidentialité</a>.
+          </label>
+        </div>
+        <button type="submit" class="btn-primary" id="register-btn" data-i18n="register_btn">Create my account</button>
+        <p class="auth-switch"><span data-i18n="has_account">Already have an account?</span> <a href="#" id="show-login" data-i18n="show_login">Login</a></p>
         <p id="register-error" class="auth-error"></p>
       </form>
 
@@ -99,6 +105,9 @@
         </svg>
         <span>View on GitHub</span>
       </a>
+      <div class="auth-legal-footer">
+        <a href="#" id="auth-legal-link" class="terms-link" data-i18n="legal_and_terms">Conditions &amp; Confidentialité</a>
+      </div>
     </div>
     <div class="auth-visual">
       <div class="floating-shapes">
@@ -168,6 +177,7 @@
           <span>View on GitHub</span>
         </a>
         <p class="about-credit">Made with ❤️ by <strong>Alexhuang03</strong></p>
+        <p style="margin-top: 0.6rem;"><a href="#" id="about-legal-link" class="terms-link" style="font-size: 0.85rem;" data-i18n="legal_and_terms">Conditions &amp; Confidentialité</a></p>
       </div>
     </div>
   </div>
@@ -428,6 +438,203 @@
       <div id="shared-users-list" class="shared-users-list"></div>
       <div class="modal-actions">
         <button class="btn-ghost" id="share-close" data-i18n="close">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legal & Terms Modal -->
+  <div id="terms-modal-overlay" class="modal-overlay">
+    <div class="modal modal-legal" id="terms-modal" data-legal-lang="en">
+      <div class="legal-modal-header">
+        <div class="legal-header-title-row">
+          <h3 data-i18n="terms_modal_title">Terms &amp; Privacy</h3>
+          <div class="legal-lang-switch">
+            <button type="button" class="legal-lang-btn active" data-legal-lang="en">EN</button>
+            <span class="legal-lang-sep">/</span>
+            <button type="button" class="legal-lang-btn" data-legal-lang="fr">FR</button>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="terms-modal-close" title="Fermer" data-i18n-title="close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="legal-tabs-nav">
+        <button type="button" class="legal-tab-btn active" data-tab="tab-cgu" data-i18n="terms_tab_cgu">Terms of Service</button>
+        <button type="button" class="legal-tab-btn" data-tab="tab-privacy" data-i18n="terms_tab_privacy">Privacy Policy</button>
+        <button type="button" class="legal-tab-btn" data-tab="tab-legal" data-i18n="terms_tab_legal">Legal Notices</button>
+      </div>
+
+      <div class="legal-content-container">
+        <!-- TAB 1: CGU / TERMS OF SERVICE -->
+        <div id="tab-cgu" class="legal-tab-pane active">
+          <!-- French Version -->
+          <div class="legal-lang-content" data-lang="fr">
+            <h4>1. Présentation et Objet du Service</h4>
+            <p>L'application <strong>ToDoList</strong> est une plateforme web moderne de gestion de tâches personnelles et de collaboration en équipe. L'utilisation du service implique l'acceptation pleine et entière des présentes Conditions Générales d'Utilisation (CGU).</p>
+
+            <h4>2. Inscription, Sécurité et Confidentialité</h4>
+            <p>Pour bénéficier de la synchronisation en ligne et du partage de fichiers, la création d'un compte utilisateur est requise. Vous devez renseigner un nom, une adresse e-mail valide et un mot de passe robuste. Vous êtes responsable du maintien de la confidentialité de vos identifiants.</p>
+
+            <h4>3. Utilisation Conforme et Prévention des Abus</h4>
+            <p>Vous vous engagez à adopter une utilisation respectueuse des ressources et de la réglementation. Sont strictement interdits :</p>
+            <ul>
+              <li>Toute tentative d'intrusion, de rétro-ingénierie, d'injection ou d'attaque par déni de service (DDoS).</li>
+              <li>Le scraping intensif ou l'automatisation excessive pouvant altérer les performances de la plateforme.</li>
+              <li>L'utilisation de la fonctionnalité de partage de fichiers à des fins de spam, de harcèlement ou de diffusion de contenus illicites.</li>
+            </ul>
+            <p>Tout abus ou non-respect de ces règles pourra donner lieu à la suspension ou à la clôture immédiate du compte sans préavis.</p>
+
+            <h4>4. Limitation de Responsabilité</h4>
+            <p>Le service ToDoList est mis à disposition à titre gracieux « en l'état » (<em>as is</em>). Bien que notre infrastructure s'appuie sur des technologies reconnues et sécurisées (<strong>OVHcloud</strong> et <strong>Cloudflare</strong>), l'éditeur ne garantit pas une disponibilité ininterrompue et ne saurait être tenu responsable :</p>
+            <ul>
+              <li>Des coupures de réseau, pannes ou interruptions nécessaires à la maintenance de la plateforme.</li>
+              <li>De la perte involontaire de données, de tâches ou de documents (il est recommandé de conserver une sauvegarde de toute information critique).</li>
+            </ul>
+
+            <h4>5. Évolution des Conditions</h4>
+            <p>Les présentes CGU peuvent être ajustées périodiquement pour suivre l'évolution des fonctionnalités ou des exigences légales.</p>
+          </div>
+
+          <!-- English Version -->
+          <div class="legal-lang-content" data-lang="en">
+            <h4>1. Service Overview &amp; Purpose</h4>
+            <p><strong>ToDoList</strong> is a modern web application designed for personal task management and real-time team collaboration. By accessing or using this service, you agree to be bound by these Terms of Service.</p>
+
+            <h4>2. Account Registration &amp; Security</h4>
+            <p>To use cloud synchronization and collaboration features, account creation is required with a full name, a valid email address, and a secure password. You are solely responsible for keeping your credentials confidential and for all activities performed under your account.</p>
+
+            <h4>3. Acceptable Use &amp; Abuse Prevention</h4>
+            <p>You agree to use the service in accordance with all applicable laws and regulations. The following actions are strictly prohibited:</p>
+            <ul>
+              <li>Any attempt to compromise security, inject malicious code, reverse-engineer, or perform denial-of-service (DDoS) attacks.</li>
+              <li>Excessive automated requests or intensive scraping that could degrade system performance.</li>
+              <li>Misusing the file sharing feature to send unsolicited messages (spam), harass others, or share illicit content.</li>
+            </ul>
+            <p>Any confirmed breach of these rules may lead to immediate suspension or termination of your account without prior notice.</p>
+
+            <h4>4. Disclaimer &amp; Limitation of Liability</h4>
+            <p>ToDoList is provided free of charge on an "as is" and "as available" basis. While our infrastructure relies on industry-standard providers (<strong>OVHcloud</strong> and <strong>Cloudflare</strong>), the operator cannot guarantee uninterrupted availability and shall not be held liable for:</p>
+            <ul>
+              <li>Temporary network outages, downtime, or scheduled maintenance interruptions.</li>
+              <li>Accidental loss of data, tasks, or documents (users are strongly advised to keep external backups of critical data).</li>
+            </ul>
+
+            <h4>5. Changes to Terms</h4>
+            <p>These Terms may be updated periodically to reflect new features or legal requirements.</p>
+          </div>
+        </div>
+
+        <!-- TAB 2: POLITIQUE DE CONFIDENTIALITÉ / PRIVACY POLICY -->
+        <div id="tab-privacy" class="legal-tab-pane">
+          <!-- French Version -->
+          <div class="legal-lang-content" data-lang="fr">
+            <h4>1. Données Personnelles Traitées</h4>
+            <p>Nous respectons strictement votre vie privée et appliquons le principe de minimisation des données (RGPD) :</p>
+            <ul>
+              <li><strong>Adresse e-mail</strong> : Utilisée exclusivement pour l'authentification sécurisée (connexion, réinitialisation de mot de passe) et la <strong>fonctionnalité de partage de fichiers/listes</strong> (permettant à d'autres utilisateurs enregistrés de collaborer avec vous en indiquant votre e-mail).</li>
+              <li><strong>Nom ou Pseudonyme</strong> : Permet d'identifier l'auteur des tâches et des partages auprès de ses collaborateurs.</li>
+              <li><strong>Mot de passe</strong> : Systématiquement haché et salé à l'aide de l'algorithme sécurisé <code>bcrypt</code>. Il n'est jamais accessible en clair.</li>
+            </ul>
+
+            <div class="legal-badge-box">
+              <strong>🔒 Zéro Spam, Zéro Monétisation :</strong> Vos informations ne sont <u>jamais</u> revendues, louées, cédées à des tiers, ni exploitées pour des campagnes publicitaires.
+            </div>
+
+            <h4>2. Hébergement &amp; Prestataires Techniques</h4>
+            <p>Vos données sont protégées par des prestataires techniques de premier plan :</p>
+            <ul>
+              <li><strong>Hébergement des serveurs et de la base de données</strong> : <strong>OVHcloud</strong> (datacenters situés en France / Union Européenne, soumis aux plus hauts standards de conformité RGPD).</li>
+              <li><strong>Réseau, CDN et Sécurité DDoS</strong> : <strong>Cloudflare, Inc.</strong> (chiffrement de bout en bout HTTPS/TLS, filtrage des attaques et protection des connexions).</li>
+            </ul>
+
+            <h4>3. Conservation et Suppression Définitive</h4>
+            <p>Vos données sont conservées uniquement pendant la durée d'utilisation de votre compte.</p>
+            <p>Vous pouvez à tout moment <strong>supprimer définitivement votre compte</strong> en un clic depuis l'onglet <em>Paramètres</em>. Cette opération supprime de façon irréversible l'ensemble de vos données personnelles, fichiers et tâches associées de notre base de données.</p>
+
+            <h4>4. Exercice de vos Droits (RGPD)</h4>
+            <p>Conformément au Règlement Général sur la Protection des Données (RGPD), vous bénéficiez à tout moment de vos droits d'accès, de rectification, d'effacement et de portabilité de vos données personnelles en contactant l'administrateur ou directement via l'application.</p>
+          </div>
+
+          <!-- English Version -->
+          <div class="legal-lang-content" data-lang="en">
+            <h4>1. Personal Data Processed &amp; Purposes</h4>
+            <p>We strictly respect your privacy and apply the principle of data minimization (GDPR):</p>
+            <ul>
+              <li><strong>Email Address</strong>: Used exclusively for secure authentication (login, password reset) and the <strong>file/task list sharing feature</strong> (allowing other registered users to invite you to collaborate by specifying your email).</li>
+              <li><strong>Display Name</strong>: Identifies the creator of tasks and lists to team members on shared boards.</li>
+              <li><strong>Password</strong>: Systematically hashed and salted using the secure <code>bcrypt</code> algorithm. It is never stored or visible in plain text.</li>
+            </ul>
+
+            <div class="legal-badge-box">
+              <strong>🔒 Zero Spam, Zero Monetization:</strong> Your data is <u>never</u> sold, rented, or shared with third parties, and is never used for advertising or marketing campaigns.
+            </div>
+
+            <h4>2. Hosting &amp; Technical Providers</h4>
+            <p>Your data is protected by industry-leading providers:</p>
+            <ul>
+              <li><strong>Server &amp; Database Hosting</strong>: <strong>OVHcloud</strong> (datacenters located in France / European Union, adhering to the highest GDPR compliance standards).</li>
+              <li><strong>Network, CDN &amp; DDoS Mitigation</strong>: <strong>Cloudflare, Inc.</strong> (end-to-end HTTPS/TLS encryption, threat filtering, and firewall protection).</li>
+            </ul>
+
+            <h4>3. Retention &amp; Permanent Deletion</h4>
+            <p>Your information is retained only as long as your account remains active.</p>
+            <p>You can permanently <strong>delete your account</strong> at any time with one click in the <em>Settings</em> tab. This action immediately and irreversibly wipes your personal information, files, and all associated tasks from our database.</p>
+
+            <h4>4. Your GDPR Rights</h4>
+            <p>In accordance with the General Data Protection Regulation (GDPR), you have the right to access, rectify, export, and erase your personal data at any time. You can exercise these rights directly from within the app or by reaching out to the project maintainer.</p>
+          </div>
+        </div>
+
+        <!-- TAB 3: MENTIONS LÉGALES / LEGAL NOTICES -->
+        <div id="tab-legal" class="legal-tab-pane">
+          <!-- French Version -->
+          <div class="legal-lang-content" data-lang="fr">
+            <h4>1. Éditeur de la Plateforme</h4>
+            <p><strong>Nom du projet :</strong> ToDoList</p>
+            <p><strong>Auteur &amp; Éditeur :</strong> Alexhuang03</p>
+            <p><strong>Dépôt GitHub officiel :</strong> <a href="https://github.com/Alexhuang03/ToDoList" target="_blank" rel="noopener noreferrer" class="terms-link">github.com/Alexhuang03/ToDoList</a></p>
+
+            <h4>2. Hébergement &amp; Sécurité</h4>
+            <p><strong>Hébergement des serveurs &amp; données :</strong><br>
+            <strong>OVHcloud (OVH SAS)</strong><br>
+            2 rue Kellermann, 59100 Roubaix, France<br>
+            RCS Lille Métropole 424 761 419<br>
+            Site internet : <a href="https://www.ovhcloud.com" target="_blank" rel="noopener noreferrer" class="terms-link">www.ovhcloud.com</a></p>
+
+            <p><strong>Réseau de diffusion, Pare-feu &amp; CDN :</strong><br>
+            <strong>Cloudflare, Inc.</strong><br>
+            101 Townsend St, San Francisco, CA 94107, USA<br>
+            Site internet : <a href="https://www.cloudflare.com" target="_blank" rel="noopener noreferrer" class="terms-link">www.cloudflare.com</a></p>
+          </div>
+
+          <!-- English Version -->
+          <div class="legal-lang-content" data-lang="en">
+            <h4>1. Platform Publisher</h4>
+            <p><strong>Project Name:</strong> ToDoList</p>
+            <p><strong>Author &amp; Publisher:</strong> Alexhuang03</p>
+            <p><strong>Official GitHub Repository:</strong> <a href="https://github.com/Alexhuang03/ToDoList" target="_blank" rel="noopener noreferrer" class="terms-link">github.com/Alexhuang03/ToDoList</a></p>
+
+            <h4>2. Hosting &amp; Security Providers</h4>
+            <p><strong>Server &amp; Data Hosting:</strong><br>
+            <strong>OVHcloud (OVH SAS)</strong><br>
+            2 rue Kellermann, 59100 Roubaix, France<br>
+            RCS Lille Métropole 424 761 419<br>
+            Website: <a href="https://www.ovhcloud.com" target="_blank" rel="noopener noreferrer" class="terms-link">www.ovhcloud.com</a></p>
+
+            <p><strong>Content Delivery Network (CDN) &amp; Security:</strong><br>
+            <strong>Cloudflare, Inc.</strong><br>
+            101 Townsend St, San Francisco, CA 94107, USA<br>
+            Website: <a href="https://www.cloudflare.com" target="_blank" rel="noopener noreferrer" class="terms-link">www.cloudflare.com</a></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" id="terms-modal-ok" data-i18n="terms_btn_close">J'ai compris</button>
       </div>
     </div>
   </div>

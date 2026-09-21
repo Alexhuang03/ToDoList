@@ -39,12 +39,17 @@ $('#show-login').addEventListener('click', e => { e.preventDefault(); $('#regist
 
 $('#register-form').addEventListener('submit', e => {
   e.preventDefault();
+  const termsCheckbox = $('#register-terms');
+  if (termsCheckbox && !termsCheckbox.checked) {
+    $('#register-error').textContent = 'Veuillez accepter les Conditions d\'Utilisation et la Politique de Confidentialité.';
+    return;
+  }
   const name = $('#register-name').value.trim();
   const email = $('#register-email').value.trim().toLowerCase();
   const pass = $('#register-password').value;
   const users = DB.getUsers();
   if (users.find(u => u.email === email)) { $('#register-error').textContent = 'Cet e-mail est déjà utilisé.'; return; }
-  const user = { id: uid(), name, email, pass };
+  const user = { id: uid(), name, email, pass, termsAcceptedAt: new Date().toISOString() };
   users.push(user);
   DB.saveUsers(users);
   DB.setSession(user.id);

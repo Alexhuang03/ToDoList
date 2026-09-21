@@ -139,4 +139,13 @@
   <entry key="Élément introuvable">Élément introuvable</entry>
   <entry key="filter_opacity_title">Opacité du filtre</entry>
   <entry key="section_general">Général</entry>
+  <entry key="terms_checkbox_label">J'accepte les &lt;a href="#" id="open-terms-link" class="terms-link"&gt;Conditions d'Utilisation&lt;/a&gt; et la &lt;a href="#" id="open-privacy-link" class="terms-link"&gt;Politique de Confidentialité&lt;/a&gt;.</entry>
+  <entry key="terms_required">Veuillez accepter les Conditions d'Utilisation et la Politique de Confidentialité.</entry>
+  <entry key="terms_modal_title">Conditions &amp; Confidentialité</entry>
+  <entry key="terms_tab_cgu">Conditions (CGU)</entry>
+  <entry key="terms_tab_privacy">Confidentialité</entry>
+  <entry key="terms_tab_legal">Mentions Légales</entry>
+  <entry key="terms_btn_close">J'ai compris</entry>
+  <entry key="legal_and_terms">Conditions &amp; Confidentialité</entry>
+  <entry key="Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité">Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité</entry>
 </translations>

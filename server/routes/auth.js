@@ -63,7 +63,10 @@ function authMiddleware(req, res, next) {
 // POST /api/auth/register
 router.post('/register', authLimiter, async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, termsAccepted } = req.body;
+    if (!termsAccepted || (termsAccepted !== true && termsAccepted !== 'true')) {
+      return res.status(400).json({ error: "Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité" });
+    }
     if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'Nom requis (texte valide)' });
     }
@@ -86,7 +89,12 @@ router.post('/register', authLimiter, async (req, res) => {
       return res.status(409).json({ error: 'Cet e-mail est déjà utilisé' });
     }
 
-    const user = new User({ name: name.trim(), email: cleanEmail, passwordHash: password });
+    const user = new User({
+      name: name.trim(),
+      email: cleanEmail,
+      passwordHash: password,
+      termsAcceptedAt: new Date(),
+    });
     await user.save();
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });

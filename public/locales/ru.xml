@@ -139,4 +139,13 @@
   <entry key="Élément introuvable">Элемент не найден</entry>
   <entry key="filter_opacity_title">Непрозрачность фильтра</entry>
   <entry key="section_general">Общее</entry>
+  <entry key="terms_checkbox_label">Я принимаю &lt;a href="#" id="open-terms-link" class="terms-link"&gt;Условия использования&lt;/a&gt; и &lt;a href="#" id="open-privacy-link" class="terms-link"&gt;Политику конфиденциальности&lt;/a&gt;.</entry>
+  <entry key="terms_required">Пожалуйста, примите условия использования и политику конфиденциальности.</entry>
+  <entry key="terms_modal_title">Условия и конфиденциальность</entry>
+  <entry key="terms_tab_cgu">Условия использования</entry>
+  <entry key="terms_tab_privacy">Политика конфиденциальности</entry>
+  <entry key="terms_tab_legal">Правовая информация</entry>
+  <entry key="terms_btn_close">Понятно</entry>
+  <entry key="legal_and_terms">Условия и конфиденциальность</entry>
+  <entry key="Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité">Вы должны принять условия использования и политику конфиденциальности</entry>
 </translations>

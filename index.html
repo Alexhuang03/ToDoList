@@ -62,6 +62,12 @@
           <label for="register-password">Mot de passe</label>
           <input type="password" id="register-password" placeholder="Minimum 6 caractères" required minlength="6">
         </div>
+        <div class="terms-group">
+          <input type="checkbox" id="register-terms" required>
+          <label for="register-terms" class="terms-label">
+            J'accepte les <a href="#" id="open-terms-link" class="terms-link">Conditions d'Utilisation</a> et la <a href="#" id="open-privacy-link" class="terms-link">Politique de Confidentialité</a>.
+          </label>
+        </div>
         <button type="submit" class="btn-primary" id="register-btn">Créer mon compte</button>
         <p class="auth-switch">Déjà un compte ? <a href="#" id="show-login">Se connecter</a></p>
         <p id="register-error" class="auth-error"></p>

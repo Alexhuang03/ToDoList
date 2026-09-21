@@ -139,4 +139,13 @@
   <entry key="Élément introuvable">Item not found</entry>
   <entry key="filter_opacity_title">Filter opacity</entry>
   <entry key="section_general">General</entry>
+  <entry key="terms_checkbox_label">I accept the &lt;a href="#" id="open-terms-link" class="terms-link"&gt;Terms of Service&lt;/a&gt; and the &lt;a href="#" id="open-privacy-link" class="terms-link"&gt;Privacy Policy&lt;/a&gt;.</entry>
+  <entry key="terms_required">Please accept the Terms of Service and Privacy Policy.</entry>
+  <entry key="terms_modal_title">Terms &amp; Privacy</entry>
+  <entry key="terms_tab_cgu">Terms of Service</entry>
+  <entry key="terms_tab_privacy">Privacy Policy</entry>
+  <entry key="terms_tab_legal">Legal Notices</entry>
+  <entry key="terms_btn_close">Got it</entry>
+  <entry key="legal_and_terms">Terms &amp; Privacy</entry>
+  <entry key="Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité">You must accept the Terms of Service and Privacy Policy</entry>
 </translations>

@@ -139,4 +139,13 @@
   <entry key="Élément introuvable">找不到此项目</entry>
   <entry key="filter_opacity_title">滤镜不透明度</entry>
   <entry key="section_general">常规</entry>
+  <entry key="terms_checkbox_label">我已阅读并同意&lt;a href="#" id="open-terms-link" class="terms-link"&gt;使用条款&lt;/a&gt;与&lt;a href="#" id="open-privacy-link" class="terms-link"&gt;隐私政策&lt;/a&gt;。</entry>
+  <entry key="terms_required">请同意使用条款和隐私政策。</entry>
+  <entry key="terms_modal_title">服务条款与隐私政策</entry>
+  <entry key="terms_tab_cgu">使用条款</entry>
+  <entry key="terms_tab_privacy">隐私政策</entry>
+  <entry key="terms_tab_legal">法律声明</entry>
+  <entry key="terms_btn_close">我知道了</entry>
+  <entry key="legal_and_terms">条款与隐私</entry>
+  <entry key="Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité">您必须同意使用条款和隐私政策</entry>
 </translations>

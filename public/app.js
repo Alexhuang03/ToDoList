@@ -130,6 +130,8 @@ async function updateLanguage(lang) {
     const key = el.dataset.i18nPlaceholder;
     el.setAttribute('placeholder', t(key));
   });
+
+  setLegalModalLanguage(lang === 'fr' ? 'fr' : 'en');
   
   if (currentUser) {
     const greet = $('#user-greeting');
@@ -311,15 +313,101 @@ $('#forgot-back').addEventListener('click', e => { e.preventDefault(); $('#forgo
 $('#auth-brand-link').addEventListener('click', () => { transitionTo('about-screen', 'left'); });
 $('#about-back-btn').addEventListener('click', () => { transitionTo('auth-screen', 'right'); });
 
+/* ===== LEGAL & TERMS MODAL ===== */
+function setLegalModalLanguage(lang) {
+  const modal = $('#terms-modal');
+  if (!modal) return;
+  const targetLang = (lang === 'fr') ? 'fr' : 'en';
+  modal.setAttribute('data-legal-lang', targetLang);
+  document.querySelectorAll('.legal-lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.legalLang === targetLang);
+  });
+}
+
+function openLegalModal(tabId = 'tab-cgu') {
+  const overlay = $('#terms-modal-overlay');
+  if (!overlay) return;
+  overlay.classList.add('active');
+  
+  const defaultLang = (currentLanguage === 'fr') ? 'fr' : 'en';
+  setLegalModalLanguage(defaultLang);
+
+  document.querySelectorAll('.legal-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll('.legal-tab-pane').forEach(pane => {
+    pane.classList.toggle('active', pane.id === tabId);
+  });
+  const container = $('.legal-content-container');
+  if (container) container.scrollTop = 0;
+}
+
+function closeLegalModal() {
+  const overlay = $('#terms-modal-overlay');
+  if (overlay) overlay.classList.remove('active');
+}
+
+document.addEventListener('click', e => {
+  const termsLink = e.target.closest('#open-terms-link');
+  if (termsLink) {
+    e.preventDefault();
+    openLegalModal('tab-cgu');
+    return;
+  }
+  const privacyLink = e.target.closest('#open-privacy-link');
+  if (privacyLink) {
+    e.preventDefault();
+    openLegalModal('tab-privacy');
+    return;
+  }
+  const authLegalLink = e.target.closest('#auth-legal-link') || e.target.closest('#about-legal-link');
+  if (authLegalLink) {
+    e.preventDefault();
+    openLegalModal('tab-cgu');
+    return;
+  }
+});
+
+$('#terms-modal-close')?.addEventListener('click', closeLegalModal);
+$('#terms-modal-ok')?.addEventListener('click', closeLegalModal);
+$('#terms-modal-overlay')?.addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeLegalModal();
+});
+
+document.querySelectorAll('.legal-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetTab = btn.dataset.tab;
+    document.querySelectorAll('.legal-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.legal-tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const pane = $(`#${targetTab}`);
+    if (pane) pane.classList.add('active');
+    const container = $('.legal-content-container');
+    if (container) container.scrollTop = 0;
+  });
+});
+
+document.querySelectorAll('.legal-lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const lang = btn.dataset.legalLang;
+    setLegalModalLanguage(lang);
+  });
+});
+
 $('#register-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('#register-name').value.trim();
   const email = $('#register-email').value.trim().toLowerCase();
   const password = $('#register-password').value;
+  const termsCheckbox = $('#register-terms');
+  if (termsCheckbox && !termsCheckbox.checked) {
+    $('#register-error').textContent = t('terms_required') || 'Veuillez accepter les Conditions d\'Utilisation et la Politique de Confidentialité.';
+    return;
+  }
   $('#register-error').textContent = '';
   setLoading('register-btn', true);
   try {
-    const data = await API.post('/auth/register', { name, email, password });
+    const data = await API.post('/auth/register', { name, email, password, termsAccepted: true });
     localStorage.setItem('tdl_token', data.token);
     currentUser = data.user;
     enterApp();
