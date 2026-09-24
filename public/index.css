@@ -346,7 +346,7 @@ body.screen-transitioning { overflow: hidden; }
 .btn-ghost {
   background: none;
   border: 1px solid var(--border);
-  color: var(--text-muted);
+  color: #ffffff;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-sm);
   font-family: inherit;
@@ -357,7 +357,15 @@ body.screen-transitioning { overflow: hidden; }
   align-items: center;
   gap: 0.4rem;
 }
-.btn-ghost:hover { color: var(--text); border-color: var(--text-muted); }
+.btn-ghost:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.5); }
+[data-theme="light"] .btn-ghost {
+  color: #000000;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+[data-theme="light"] .btn-ghost:hover {
+  color: #000000;
+  border-color: rgba(0, 0, 0, 0.5);
+}
 
 .btn-danger {
   background: var(--danger);
@@ -781,15 +789,27 @@ body.screen-transitioning { overflow: hidden; }
   border-radius: var(--radius-xs);
   background: var(--bg-icon-btn);
   border: none;
-  color: var(--text-muted);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: var(--transition);
 }
-.icon-btn:hover { background: var(--bg-icon-btn-hover); color: var(--text); }
+.icon-btn:hover { background: var(--bg-icon-btn-hover); color: #ffffff; }
 .icon-btn.danger:hover { color: var(--danger); background: var(--danger-glow); }
+
+[data-theme="light"] .icon-btn {
+  color: #000000;
+}
+[data-theme="light"] .icon-btn:hover {
+  background: var(--bg-icon-btn-hover);
+  color: #000000;
+}
+[data-theme="light"] .icon-btn.danger:hover {
+  color: var(--danger);
+  background: var(--danger-glow);
+}
 
 /* Trash Card */
 .file-card.trash-card {
@@ -1284,13 +1304,17 @@ body.screen-transitioning { overflow: hidden; }
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  color: #ffffff;
   font-family: 'Outfit', 'Inter', sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+}
+
+[data-theme="light"] .category-index-item {
+  color: #000000;
 }
 
 .category-index-item:hover {
@@ -1595,7 +1619,7 @@ body.screen-transitioning { overflow: hidden; }
   height: 20px;
   min-width: 20px;
   border-radius: 50%;
-  border: 2px solid var(--border);
+  border: 2px solid rgba(255, 255, 255, 0.5);
   background: none;
   cursor: pointer;
   transition: var(--transition);
@@ -1604,7 +1628,13 @@ body.screen-transitioning { overflow: hidden; }
   justify-content: center;
   padding: 0;
 }
-.mission-check:hover { border-color: var(--accent); }
+.mission-check:hover { border-color: #ffffff; }
+[data-theme="light"] .mission-check {
+  border-color: rgba(0, 0, 0, 0.4);
+}
+[data-theme="light"] .mission-check:hover {
+  border-color: #000000;
+}
 .mission-check.checked {
   background: var(--accent);
   border-color: var(--accent);
@@ -1627,6 +1657,10 @@ body.screen-transitioning { overflow: hidden; }
   transition: var(--transition);
   line-height: 1.4;
   min-height: 1.4em;
+  color: #ffffff;
+}
+[data-theme="light"] .mission-text {
+  color: #000000;
 }
 .mission-text:hover { background: var(--bg-hover-subtle); }
 
@@ -1635,19 +1669,28 @@ body.screen-transitioning { overflow: hidden; }
   background: var(--bg-input);
   border: 1px solid var(--accent);
   border-radius: 4px;
-  color: var(--text);
+  color: #ffffff;
   font-family: inherit;
   font-size: 0.98rem;
   padding: 0.2rem 0.4rem;
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
+[data-theme="light"] .mission-text-input {
+  color: #000000;
+}
 
 .mission-item.completed .mission-text {
-  color: var(--text-dim);
+  color: rgba(255, 255, 255, 0.45);
   font-style: italic;
   text-decoration: line-through;
-  text-decoration-color: var(--text-dim);
+  text-decoration-color: rgba(255, 255, 255, 0.4);
+}
+[data-theme="light"] .mission-item.completed .mission-text {
+  color: rgba(0, 0, 0, 0.4);
+  font-style: italic;
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.35);
 }
 
 .mission-actions {
@@ -1658,13 +1701,22 @@ body.screen-transitioning { overflow: hidden; }
 }
 .mission-item:hover > .mission-actions { opacity: 1; }
 
+.mission-actions .icon-btn,
+.subtask-actions .icon-btn {
+  color: #ffffff;
+}
+[data-theme="light"] .mission-actions .icon-btn,
+[data-theme="light"] .subtask-actions .icon-btn {
+  color: #000000;
+}
+
 /* Arrow for subtasks */
 .subtask-toggle {
   width: 22px;
   height: 22px;
   border: none;
   background: none;
-  color: var(--text-dim);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1673,19 +1725,30 @@ body.screen-transitioning { overflow: hidden; }
   border-radius: 4px;
   padding: 0;
 }
-.subtask-toggle:hover { color: var(--text); background: var(--bg-icon-btn); }
+.subtask-toggle:hover { color: #ffffff; background: var(--bg-icon-btn); }
 .subtask-toggle svg { transition: transform 0.2s ease; }
 .subtask-toggle.open svg { transform: rotate(90deg); }
+
+[data-theme="light"] .subtask-toggle {
+  color: #000000;
+}
+[data-theme="light"] .subtask-toggle:hover {
+  color: #000000;
+  background: var(--bg-icon-btn);
+}
 
 /* Subtasks container */
 .subtasks-list {
   margin-left: 2.6rem;
   padding-left: 0.75rem;
-  border-left: 2px solid var(--border);
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
   max-height: 0;
   opacity: 0;
   transition: max-height 0.35s ease, opacity 0.25s ease;
+}
+[data-theme="light"] .subtasks-list {
+  border-left-color: rgba(0, 0, 0, 0.15);
 }
 .subtasks-list.open {
   max-height: 1000px;
@@ -1708,7 +1771,7 @@ body.screen-transitioning { overflow: hidden; }
   height: 16px;
   min-width: 16px;
   border-radius: 50%;
-  border: 2px solid var(--border);
+  border: 2px solid rgba(255, 255, 255, 0.5);
   background: none;
   cursor: pointer;
   transition: var(--transition);
@@ -1717,7 +1780,13 @@ body.screen-transitioning { overflow: hidden; }
   justify-content: center;
   padding: 0;
 }
-.subtask-check:hover { border-color: var(--accent); }
+.subtask-check:hover { border-color: #ffffff; }
+[data-theme="light"] .subtask-check {
+  border-color: rgba(0, 0, 0, 0.4);
+}
+[data-theme="light"] .subtask-check:hover {
+  border-color: #000000;
+}
 .subtask-check.checked {
   background: var(--accent);
   border-color: var(--accent);
@@ -1737,16 +1806,27 @@ body.screen-transitioning { overflow: hidden; }
   cursor: text;
   padding: 0.1rem 0.2rem;
   border-radius: 4px;
-  color: var(--text-muted);
+  color: #ffffff;
+}
+[data-theme="light"] .subtask-text {
+  color: #000000;
 }
 .subtask-item.completed .subtask-text {
-  color: var(--text-dim);
+  color: rgba(255, 255, 255, 0.45);
   font-style: italic;
   text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.4);
+}
+[data-theme="light"] .subtask-item.completed .subtask-text {
+  color: rgba(0, 0, 0, 0.4);
+  font-style: italic;
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.35);
 }
 
 .subtask-actions {
   display: flex;
+  gap: 0.2rem;
   opacity: 0;
   transition: var(--transition);
 }
