@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="index.css?v=3.1">
+  <link rel="stylesheet" href="index.css?v=3.2">
   <link rel="icon" type="image/png" href="todolist.png">
 </head>
 
@@ -262,6 +262,7 @@
         </div>
       </div>
       <div class="header-right">
+        <div id="live-presence" class="live-presence hidden" title="Collaborateurs en direct"></div>
         <div id="progress-container" class="progress-container">
           <div class="progress-bar">
             <div id="progress-fill" class="progress-fill"></div>
@@ -317,6 +318,12 @@
           <kbd class="kbd-hint" data-i18n="kbd_enter">Entrée</kbd>
           <kbd id="tab-hint" class="kbd-hint tab-hint" style="display:none;">Tab ↹</kbd>
           <div id="quick-entry-dropdown" class="quick-entry-dropdown hidden"></div>
+        </div>
+        <div id="live-typing-indicator" class="live-typing-indicator hidden">
+          <span class="live-typing-dots">
+            <span></span><span></span><span></span>
+          </span>
+          <span id="live-typing-text" class="live-typing-text"></span>
         </div>
         <div class="file-layout-container">
           <div class="file-content-area">
@@ -939,7 +946,7 @@
     </div>
   </aside>
 
-  <script src="app.js?v=3.0"></script>
+  <script src="app.js?v=3.2"></script>
 
 </body>
 

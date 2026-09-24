@@ -1,8 +1,10 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const connectDB = require('./db');
+const { initWebSocket } = require('./websocket');
 
 const { router: authRouter } = require('./routes/auth');
 const filesRouter = require('./routes/files');
@@ -24,7 +26,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "ws:", "wss:"],
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -71,9 +73,12 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-// Démarrage
+// Démarrage avec serveur HTTP et WebSocket
+const server = http.createServer(app);
+initWebSocket(server);
+
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
   });
 });

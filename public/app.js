@@ -443,6 +443,7 @@ $('#logout-btn').addEventListener('click', async () => {
   localStorage.removeItem('tdl_token');
   currentUser = null;
   currentFile = null;
+  disconnectRealTime();
   stopPolling();
   // Reset personalization settings back to default on logout
   if (applyWallpaper) applyWallpaper({ type: 'default' }, false);
@@ -495,6 +496,7 @@ async function enterApp() {
     }
   }
 
+  initRealTimeConnection();
   renderHome();
   transitionTo('home-screen', 'up');
 }
@@ -817,6 +819,7 @@ function openFile(f) {
   renderSections();
   transitionTo('file-screen', 'left');
   setTimeout(() => $('#quick-entry').focus(), 100);
+  joinFileRoom(f._id);
   startPolling();
 }
 
@@ -1232,6 +1235,7 @@ document.querySelector('.folder-sidebar-header')?.addEventListener('click', (e) 
 });
 
 $('#back-btn').addEventListener('click', () => {
+  if (currentFile && currentFile._id) leaveFileRoom(currentFile._id);
   stopPolling();
   closeMissionNotes();
   currentFile = null;
@@ -1247,26 +1251,240 @@ async function saveFile() {
   } catch (err) { toast(t('error_prefix') + t(err.message)); }
 }
 
-/* ===== POLLING (collaboration) ===== */
+/* ===== REAL-TIME WEBSOCKET & COLLABORATION ===== */
+let realTimeWs = null;
+let wsReconnectTimer = null;
+let typingIndicatorTimeout = null;
+let lastTypingSentAt = 0;
+
+function initRealTimeConnection() {
+  if (realTimeWs && (realTimeWs.readyState === WebSocket.OPEN || realTimeWs.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const token = localStorage.getItem('tdl_token');
+  const wsUrl = `${protocol}//${window.location.host}/ws${token ? '?token=' + encodeURIComponent(token) : ''}`;
+
+  try {
+    realTimeWs = new WebSocket(wsUrl);
+
+    realTimeWs.addEventListener('open', () => {
+      console.log('⚡ Connecté au serveur temps réel');
+      clearTimeout(wsReconnectTimer);
+      if (currentFile && currentFile._id) {
+        joinFileRoom(currentFile._id);
+      }
+    });
+
+    realTimeWs.addEventListener('message', (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        handleRealTimeMessage(msg);
+      } catch (err) {
+        console.error('Erreur décodage message temps réel:', err);
+      }
+    });
+
+    realTimeWs.addEventListener('close', () => {
+      const presenceEl = $('#live-presence');
+      if (presenceEl) presenceEl.classList.add('hidden');
+      const typingEl = $('#live-typing-indicator');
+      if (typingEl) typingEl.classList.add('hidden');
+
+      if (currentUser) {
+        clearTimeout(wsReconnectTimer);
+        wsReconnectTimer = setTimeout(initRealTimeConnection, 2500);
+      }
+    });
+
+    realTimeWs.addEventListener('error', (err) => {
+      console.warn('Erreur WebSocket temps réel:', err);
+    });
+  } catch (err) {
+    console.warn('Impossible d\'initier la connexion temps réel:', err);
+  }
+}
+
+function disconnectRealTime() {
+  clearTimeout(wsReconnectTimer);
+  if (realTimeWs) {
+    try {
+      realTimeWs.close();
+    } catch (_) {}
+    realTimeWs = null;
+  }
+  const presenceEl = $('#live-presence');
+  if (presenceEl) {
+    presenceEl.classList.add('hidden');
+    presenceEl.innerHTML = '';
+  }
+  const typingEl = $('#live-typing-indicator');
+  if (typingEl) typingEl.classList.add('hidden');
+}
+
+function joinFileRoom(fileId) {
+  if (!fileId) return;
+  if (realTimeWs && realTimeWs.readyState === WebSocket.OPEN) {
+    realTimeWs.send(JSON.stringify({ type: 'join_file', fileId: fileId.toString() }));
+  }
+}
+
+function leaveFileRoom(fileId) {
+  if (!fileId) return;
+  if (realTimeWs && realTimeWs.readyState === WebSocket.OPEN) {
+    realTimeWs.send(JSON.stringify({ type: 'leave_file', fileId: fileId.toString() }));
+  }
+  const presenceEl = $('#live-presence');
+  if (presenceEl) {
+    presenceEl.classList.add('hidden');
+    presenceEl.innerHTML = '';
+  }
+  const typingEl = $('#live-typing-indicator');
+  if (typingEl) typingEl.classList.add('hidden');
+}
+
+function broadcastTyping(action = 'quick_entry', text = '') {
+  if (!currentFile || !realTimeWs || realTimeWs.readyState !== WebSocket.OPEN) return;
+  const now = Date.now();
+  if (now - lastTypingSentAt < 600) return;
+  lastTypingSentAt = now;
+  realTimeWs.send(JSON.stringify({
+    type: 'typing',
+    fileId: currentFile._id.toString(),
+    action,
+    text,
+  }));
+}
+
+function handleRealTimeMessage(msg) {
+  if (!msg || !msg.type) return;
+
+  switch (msg.type) {
+    case 'file_updated':
+      onRealTimeFileUpdated(msg);
+      break;
+
+    case 'file_deleted':
+      if (currentFile && currentFile._id && currentFile._id.toString() === msg.fileId?.toString()) {
+        toast('Ce fichier a été supprimé par son propriétaire.');
+        stopPolling();
+        closeMissionNotes();
+        currentFile = null;
+        renderHome();
+        transitionTo('home-screen', 'right');
+      }
+      break;
+
+    case 'presence_update':
+      onRealTimePresenceUpdate(msg);
+      break;
+
+    case 'user_typing':
+      onRealTimeUserTyping(msg);
+      break;
+  }
+}
+
+function onRealTimeFileUpdated(msg) {
+  if (!currentFile || !msg.file) return;
+  const updatedId = (msg.file._id || msg.fileId || '').toString();
+  if (updatedId !== currentFile._id.toString()) return;
+
+  if (msg.senderId && currentUser && msg.senderId === currentUser._id.toString()) {
+    return;
+  }
+
+  const activeInput = document.querySelector('.mission-text-input, .section-tag-input, .file-title-input');
+  if (activeInput) {
+    currentFile.sections = msg.file.sections;
+    currentFile.sharedWith = msg.file.sharedWith;
+    currentFile.description = msg.file.description;
+    currentFile.name = msg.file.name;
+    return;
+  }
+
+  currentFile = msg.file;
+
+  renderFolderDescription();
+  renderSections();
+  updateQuickEntryPlaceholder();
+
+  if (selectedMissionId) {
+    const found = findMissionById(selectedMissionId);
+    if (found) {
+      const notesInput = $('#mission-notes-input');
+      const isEditingNotes = notesInput && !notesInput.classList.contains('hidden') && document.activeElement === notesInput;
+      if (!isEditingNotes) {
+        renderMissionNotes();
+      }
+    }
+  }
+
+  const senderUser = (msg.file.sharedWith && msg.file.sharedWith.find(u => (u._id || u.id || '').toString() === msg.senderId)) ||
+                     (msg.file.ownerId && (msg.file.ownerId._id || msg.file.ownerId.id || '').toString() === msg.senderId ? msg.file.ownerId : null);
+  const senderName = senderUser ? (senderUser.name || senderUser.email) : 'Un coéquipier';
+  toast(`⚡ Mis à jour en direct par ${senderName}`);
+}
+
+function onRealTimePresenceUpdate(msg) {
+  if (!currentFile || !msg.fileId || msg.fileId.toString() !== currentFile._id.toString()) return;
+  const presenceEl = $('#live-presence');
+  if (!presenceEl) return;
+
+  const activeUsers = msg.activeUsers || [];
+  const otherUsers = activeUsers.filter(u => !currentUser || u.id !== currentUser._id.toString());
+
+  if (otherUsers.length > 0) {
+    const names = otherUsers.map(u => esc(u.name)).join(', ');
+    presenceEl.innerHTML = `
+      <span class="live-status-dot" title="En direct"></span>
+      <span class="live-user-badge"><span class="live-user-name">${names}</span> en direct</span>
+    `;
+    presenceEl.classList.remove('hidden');
+  } else {
+    presenceEl.classList.add('hidden');
+    presenceEl.innerHTML = '';
+  }
+}
+
+function onRealTimeUserTyping(msg) {
+  if (!currentFile || !msg.fileId || msg.fileId.toString() !== currentFile._id.toString()) return;
+  const indicator = $('#live-typing-indicator');
+  const textEl = $('#live-typing-text');
+  if (!indicator || !textEl) return;
+
+  const name = msg.user?.name || 'Un coéquipier';
+  textEl.textContent = `${name} est en train d'écrire...`;
+  indicator.classList.remove('hidden');
+
+  clearTimeout(typingIndicatorTimeout);
+  typingIndicatorTimeout = setTimeout(() => {
+    indicator.classList.add('hidden');
+  }, 2500);
+}
+
+/* ===== POLLING (collaboration fallback) ===== */
 function startPolling() {
   stopPolling();
-  // Ne démarrer le rafraîchissement d'arrière-plan QUE si le fichier est partagé avec des collaborateurs
+  if (realTimeWs && realTimeWs.readyState === WebSocket.OPEN) return;
   if (!currentFile || !currentFile.sharedWith || currentFile.sharedWith.length === 0) return;
 
   pollInterval = setInterval(async () => {
-    if (!currentFile) return;
-    if (!currentFile.sharedWith || currentFile.sharedWith.length === 0) {
+    if (realTimeWs && realTimeWs.readyState === WebSocket.OPEN) {
       stopPolling();
       return;
     }
-    // Ne jamais rafraîchir en arrière-plan si l'utilisateur est en train d'écrire
+    if (!currentFile || !currentFile.sharedWith || currentFile.sharedWith.length === 0) {
+      stopPolling();
+      return;
+    }
     const isEditing = document.querySelector('.mission-text-input, .section-tag-input, .file-title-input')
       || (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA'));
     if (isEditing) return;
 
     try {
       const { file } = await API.get(`/files/${currentFile._id}`);
-      // Si le contenu des sections est strictement identique, ne jamais toucher au DOM
       if (file && file.sections && currentFile.sections) {
         if (JSON.stringify(file.sections) === JSON.stringify(currentFile.sections)) {
           return;
@@ -1276,7 +1494,7 @@ function startPolling() {
       renderFolderDescription();
       renderSections();
     } catch {}
-  }, 5000);
+  }, 4000);
 }
 
 function stopPolling() {
@@ -1566,6 +1784,9 @@ function parseTags(val) {
   input.addEventListener('input', () => {
     selectedIndex = 0;
     updateGhost();
+    if (typeof broadcastTyping === 'function') {
+      broadcastTyping('quick_entry');
+    }
   });
 
   input.addEventListener('scroll', () => {

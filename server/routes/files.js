@@ -4,6 +4,7 @@ const File = require('../models/File');
 const Trash = require('../models/Trash');
 const User = require('../models/User');
 const { authMiddleware } = require('./auth');
+const { broadcastToFile } = require('../websocket');
 const router = express.Router();
 
 // Helper : valider un ObjectId MongoDB
@@ -115,6 +116,15 @@ router.put('/:id', authMiddleware, async (req, res) => {
     await file.save();
     await file.populate('ownerId', 'name email');
     await file.populate('sharedWith', 'name email');
+
+    // Diffusion temps réel aux collaborateurs connectés
+    broadcastToFile(file._id.toString(), {
+      type: 'file_updated',
+      fileId: file._id.toString(),
+      file,
+      senderId: req.userId.toString(),
+    });
+
     res.json({ file });
   } catch (err) {
     console.error(err);
@@ -149,6 +159,13 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     await trashDoc.save();
 
     await File.findByIdAndDelete(req.params.id);
+
+    // Notifier les collaborateurs connectés que le fichier a été supprimé
+    broadcastToFile(req.params.id, {
+      type: 'file_deleted',
+      fileId: req.params.id,
+    });
+
     res.json({ message: 'Fichier supprimé' });
   } catch (err) {
     console.error(err);
@@ -185,6 +202,14 @@ router.post('/:id/share', authMiddleware, async (req, res) => {
     await file.save();
     await file.populate('ownerId', 'name email');
     await file.populate('sharedWith', 'name email');
+
+    broadcastToFile(file._id.toString(), {
+      type: 'file_updated',
+      fileId: file._id.toString(),
+      file,
+      senderId: req.userId.toString(),
+    });
+
     res.json({ file });
   } catch (err) {
     console.error(err);
@@ -207,6 +232,14 @@ router.delete('/:id/share/:uid', authMiddleware, async (req, res) => {
     await file.save();
     await file.populate('ownerId', 'name email');
     await file.populate('sharedWith', 'name email');
+
+    broadcastToFile(file._id.toString(), {
+      type: 'file_updated',
+      fileId: file._id.toString(),
+      file,
+      senderId: req.userId.toString(),
+    });
+
     res.json({ file });
   } catch (err) {
     console.error(err);
