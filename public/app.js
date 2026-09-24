@@ -1319,12 +1319,29 @@ function parseTags(val) {
   let sectionName = '';
   let cleanText = val;
 
-  const hashMatch = val.match(/#(\S+)/);
-  if (hashMatch) {
-    sectionName = hashMatch[1];
-    cleanText = cleanText.replace(/#\S+/g, '').trim();
-  } else {
-    sectionName = getGeneralSectionDisplay();
+  if (currentFile && currentFile.sections && currentFile.sections.length > 0) {
+    const knownSections = currentFile.sections
+      .map(s => isGeneralSection(s.name) ? getGeneralSectionDisplay() : s.name)
+      .sort((a, b) => b.length - a.length);
+    for (const name of knownSections) {
+      const escName = name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const reg = new RegExp('#' + escName + '(?=\\s|$|[.,!?;])', 'i');
+      if (reg.test(cleanText)) {
+        sectionName = name;
+        cleanText = cleanText.replace(reg, '').trim();
+        break;
+      }
+    }
+  }
+
+  if (!sectionName) {
+    const hashMatch = cleanText.match(/#(\S+)/);
+    if (hashMatch) {
+      sectionName = hashMatch[1];
+      cleanText = cleanText.replace(/#\S+/g, '').trim();
+    } else {
+      sectionName = getGeneralSectionDisplay();
+    }
   }
 
   const collabs = getCollabs();
@@ -1364,94 +1381,235 @@ function parseTags(val) {
   const input    = $('#quick-entry');
   const ghost    = $('#quick-entry-ghost');
   const tabHint  = $('#tab-hint');
-  let currentSuggestion = ''; // tag name to suggest
-  let prefixType = '';         // '#' or '@'
-  let tagStart = -1;          // index of '#' or '@' in input value
+  const dropdown = $('#quick-entry-dropdown');
+
+  let currentMatches = [];
+  let selectedIndex = 0;
+  let currentSuggestion = '';
+  let prefixType = '';
+  let tagStart = -1;
 
   function getSections() {
-    return currentFile ? currentFile.sections.map(s => isGeneralSection(s.name) ? getGeneralSectionDisplay() : s.name) : [];
+    if (!currentFile || !currentFile.sections) return [];
+    const list = currentFile.sections.map(s => isGeneralSection(s.name) ? getGeneralSectionDisplay() : s.name);
+    return [...new Set(list)];
   }
 
-  function findMatch(typed, type) {
-    if (!typed) return '';
+  function getCollabsPool() {
+    const collabs = getCollabs();
+    return [...new Set(collabs)];
+  }
+
+  function findMatches(typed, type) {
+    const pool = type === '#' ? getSections() : getCollabsPool();
+    if (!pool.length) return [];
+    if (!typed) {
+      return [...pool];
+    }
     const lower = typed.toLowerCase();
-    const pool = type === '#' ? getSections() : getCollabs();
-    return pool.find(s => s.toLowerCase().startsWith(lower) && s.toLowerCase() !== lower) || '';
+    const prefixMatches = pool.filter(s => s.toLowerCase().startsWith(lower));
+    const otherMatches = pool.filter(s => !s.toLowerCase().startsWith(lower) && s.toLowerCase().includes(lower));
+    return [...prefixMatches, ...otherMatches];
+  }
+
+  function closeDropdown() {
+    if (dropdown) {
+      dropdown.classList.add('hidden');
+      dropdown.innerHTML = '';
+    }
+    currentMatches = [];
+    selectedIndex = 0;
+  }
+
+  function clearGhost() {
+    if (ghost) ghost.innerHTML = '';
+    if (tabHint) tabHint.style.display = 'none';
+    currentSuggestion = '';
+    prefixType = '';
+    tagStart = -1;
+  }
+
+  function renderDropdown(matches, activeIdx, type) {
+    if (!dropdown) return;
+    dropdown.innerHTML = '';
+    if (!matches || matches.length === 0) {
+      dropdown.classList.add('hidden');
+      return;
+    }
+
+    matches.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'quick-entry-dropdown-item' + (index === activeIdx ? ' active' : '');
+
+      const badge = document.createElement('span');
+      badge.className = 'quick-entry-dropdown-badge';
+      badge.textContent = type;
+
+      const name = document.createElement('span');
+      name.className = 'quick-entry-dropdown-name';
+      name.textContent = item;
+
+      div.appendChild(badge);
+      div.appendChild(name);
+
+      div.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        acceptSuggestion(item);
+      });
+
+      dropdown.appendChild(div);
+    });
+
+    dropdown.classList.remove('hidden');
+
+    const activeEl = dropdown.children[activeIdx];
+    if (activeEl) {
+      activeEl.scrollIntoView({ block: 'nearest' });
+    }
   }
 
   function updateGhost() {
+    if (!input || !ghost) return;
     const val = input.value;
-    const hashIdx = val.lastIndexOf('#');
-    const atIdx = val.lastIndexOf('@');
+    const cursor = (input.selectionStart !== null && input.selectionStart !== undefined) ? input.selectionStart : val.length;
+    const beforeCursor = val.slice(0, cursor);
+
+    const hashIdx = beforeCursor.lastIndexOf('#');
+    const atIdx = beforeCursor.lastIndexOf('@');
 
     let activeIdx = -1;
     let type = '';
     if (hashIdx > atIdx) {
       activeIdx = hashIdx;
       type = '#';
-    } else {
+    } else if (atIdx > hashIdx) {
       activeIdx = atIdx;
       type = '@';
     }
 
     if (activeIdx === -1) {
-      ghost.innerHTML = '';
-      tabHint.style.display = 'none';
-      currentSuggestion = '';
-      prefixType = '';
-      tagStart = -1;
+      clearGhost();
+      closeDropdown();
+      return;
+    }
+
+    const afterSymbol = beforeCursor.slice(activeIdx + 1);
+    if (/\s/.test(afterSymbol)) {
+      clearGhost();
+      closeDropdown();
       return;
     }
 
     if (type === '@') {
       const isShared = currentFile && currentFile.sharedWith && currentFile.sharedWith.length > 0;
       if (!isShared) {
-        ghost.innerHTML = '';
-        tabHint.style.display = 'none';
-        currentSuggestion = '';
-        prefixType = '';
-        tagStart = -1;
+        clearGhost();
+        closeDropdown();
         return;
       }
     }
 
-    tagStart = activeIdx;
-    prefixType = type;
-    const afterSymbol = val.slice(activeIdx + 1);
-
-    const match = findMatch(afterSymbol, type);
-    if (!match) {
-      ghost.innerHTML = '';
-      tabHint.style.display = 'none';
-      currentSuggestion = '';
+    const matches = findMatches(afterSymbol, type);
+    if (!matches || matches.length === 0) {
+      clearGhost();
+      closeDropdown();
       return;
     }
 
-    currentSuggestion = match;
-    const completion = match.slice(afterSymbol.length);
+    currentMatches = matches;
+    if (selectedIndex >= matches.length || selectedIndex < 0) {
+      selectedIndex = 0;
+    }
 
-    const typedSpan    = `<span class="ghost-typed">${esc(val)}</span>`;
-    const suggSpan     = `<span class="ghost-suggestion">${esc(completion)}</span>`;
-    ghost.innerHTML    = typedSpan + suggSpan;
-    tabHint.style.display = 'block';
+    tagStart = activeIdx;
+    prefixType = type;
+    const chosenMatch = matches[selectedIndex];
+    currentSuggestion = chosenMatch;
+
+    if (chosenMatch.toLowerCase().startsWith(afterSymbol.toLowerCase())) {
+      const completion = chosenMatch.slice(afterSymbol.length);
+      const typedSpan = `<span class="ghost-typed">${esc(beforeCursor)}</span>`;
+      const suggSpan  = `<span class="ghost-suggestion">${esc(completion)}</span>`;
+      ghost.innerHTML = typedSpan + suggSpan;
+      if (tabHint) tabHint.style.display = 'block';
+    } else {
+      ghost.innerHTML = '';
+      if (tabHint) tabHint.style.display = 'block';
+    }
+
+    if (ghost) ghost.scrollLeft = input.scrollLeft;
+    renderDropdown(matches, selectedIndex, type);
   }
 
-  function acceptSuggestion() {
-    if (!currentSuggestion || tagStart === -1) return;
-    const val       = input.value;
-    const afterSymbol = val.slice(tagStart + 1);
-    const completion = currentSuggestion.slice(afterSymbol.length);
-    input.value = val + completion;
-    updateGhost();
+  function acceptSuggestion(customMatch) {
+    const chosen = customMatch || currentSuggestion;
+    if (!chosen || tagStart === -1) return;
+
+    const val = input.value;
+    const cursor = (input.selectionStart !== null && input.selectionStart !== undefined) ? input.selectionStart : val.length;
+    const beforeTag = val.slice(0, tagStart);
+    let afterCursor = val.slice(cursor);
+    if (afterCursor.startsWith(' ')) {
+      afterCursor = afterCursor.slice(1);
+    }
+
+    const inserted = prefixType + chosen + ' ';
+    input.value = beforeTag + inserted + afterCursor;
+    const newCursor = beforeTag.length + inserted.length;
+    input.setSelectionRange(newCursor, newCursor);
+
+    clearGhost();
+    closeDropdown();
     input.focus();
   }
 
-  input.addEventListener('input', updateGhost);
+  input.addEventListener('input', () => {
+    selectedIndex = 0;
+    updateGhost();
+  });
+
+  input.addEventListener('scroll', () => {
+    if (ghost) ghost.scrollLeft = input.scrollLeft;
+  });
+
+  input.addEventListener('click', updateGhost);
+  input.addEventListener('keyup', e => {
+    if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+      updateGhost();
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      closeDropdown();
+      clearGhost();
+    }, 250);
+  });
 
   input.addEventListener('keydown', async e => {
     if (e.isComposing || e.keyCode === 229) return;
+
+    const isDropdownOpen = dropdown && !dropdown.classList.contains('hidden') && currentMatches.length > 0;
+
+    if (e.key === 'ArrowDown' && isDropdownOpen) {
+      e.preventDefault();
+      selectedIndex = (selectedIndex + 1) % currentMatches.length;
+      updateGhostAfterIndexChange();
+      return;
+    }
+
+    if (e.key === 'ArrowUp' && isDropdownOpen) {
+      e.preventDefault();
+      selectedIndex = (selectedIndex - 1 + currentMatches.length) % currentMatches.length;
+      updateGhostAfterIndexChange();
+      return;
+    }
+
     if (e.key === 'Tab') {
-      if (currentSuggestion) {
+      if (isDropdownOpen && currentMatches.length > 0) {
+        e.preventDefault();
+        acceptSuggestion(currentMatches[selectedIndex]);
+      } else if (currentSuggestion) {
         e.preventDefault();
         acceptSuggestion();
       }
@@ -1459,13 +1617,26 @@ function parseTags(val) {
     }
 
     if (e.key === 'Escape') {
-      ghost.innerHTML = '';
-      tabHint.style.display = 'none';
-      currentSuggestion = '';
+      clearGhost();
+      closeDropdown();
       return;
     }
 
     if (e.key !== 'Enter') return;
+
+    if (isDropdownOpen && currentMatches.length > 0) {
+      const val = input.value;
+      const cursor = input.selectionStart != null ? input.selectionStart : val.length;
+      const typed = val.slice(tagStart + 1, cursor);
+      const chosen = currentMatches[selectedIndex];
+
+      if (!typed || typed.toLowerCase() !== chosen.toLowerCase()) {
+        e.preventDefault();
+        acceptSuggestion(chosen);
+        return;
+      }
+    }
+
     const val = e.target.value.trim();
     if (!val) return;
 
@@ -1496,12 +1667,36 @@ function parseTags(val) {
     });
 
     e.target.value = '';
-    ghost.innerHTML = '';
-    tabHint.style.display = 'none';
-    currentSuggestion = '';
+    clearGhost();
+    closeDropdown();
     await saveFile();
     renderSections();
   });
+
+  function updateGhostAfterIndexChange() {
+    if (!currentMatches.length) return;
+    const chosenMatch = currentMatches[selectedIndex];
+    currentSuggestion = chosenMatch;
+
+    const val = input.value;
+    const cursor = (input.selectionStart !== null && input.selectionStart !== undefined) ? input.selectionStart : val.length;
+    const beforeCursor = val.slice(0, cursor);
+    const afterSymbol = beforeCursor.slice(tagStart + 1);
+
+    if (chosenMatch.toLowerCase().startsWith(afterSymbol.toLowerCase())) {
+      const completion = chosenMatch.slice(afterSymbol.length);
+      const typedSpan = `<span class="ghost-typed">${esc(beforeCursor)}</span>`;
+      const suggSpan  = `<span class="ghost-suggestion">${esc(completion)}</span>`;
+      ghost.innerHTML = typedSpan + suggSpan;
+      if (tabHint) tabHint.style.display = 'block';
+    } else {
+      ghost.innerHTML = '';
+      if (tabHint) tabHint.style.display = 'block';
+    }
+
+    if (ghost) ghost.scrollLeft = input.scrollLeft;
+    renderDropdown(currentMatches, selectedIndex, prefixType);
+  }
 })();
 
 /* ===== RENDER SECTIONS ===== */

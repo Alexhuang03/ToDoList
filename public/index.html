@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="index.css?v=2.9">
+  <link rel="stylesheet" href="index.css?v=3.0">
   <link rel="icon" type="image/png" href="todolist.png">
 </head>
 
@@ -310,12 +310,13 @@
       <!-- Colonne Centrale : Liste des tâches -->
       <div class="file-center-column">
         <div class="quick-entry-wrapper">
-          <div id="quick-entry-ghost" class="quick-entry-ghost" aria-hidden="true"></div>
           <input type="text" id="quick-entry" class="quick-entry"
             placeholder="Nouvelle mission... ajoutez #section pour trier" autocomplete="off"
             data-i18n-placeholder="quick_entry_private">
+          <div id="quick-entry-ghost" class="quick-entry-ghost" aria-hidden="true"></div>
           <kbd class="kbd-hint" data-i18n="kbd_enter">Entrée</kbd>
           <kbd id="tab-hint" class="kbd-hint tab-hint" style="display:none;">Tab ↹</kbd>
+          <div id="quick-entry-dropdown" class="quick-entry-dropdown hidden"></div>
         </div>
         <div class="file-layout-container">
           <div class="file-content-area">
@@ -938,7 +939,7 @@
     </div>
   </aside>
 
-  <script src="app.js?v=2.8"></script>
+  <script src="app.js?v=3.0"></script>
 
 </body>
 
