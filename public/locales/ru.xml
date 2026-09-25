@@ -17,6 +17,12 @@
   <entry key="register_btn">Создать аккаунт</entry>
   <entry key="has_account">Уже есть аккаунт?</entry>
   <entry key="show_login">Войти</entry>
+  <entry key="check_email_title">Проверьте вашу почту</entry>
+  <entry key="check_email_desc">Ссылка для подтверждения отправлена на вашу почту. Перейдите по ней для активации аккаунта.</entry>
+  <entry key="check_email_desc_user">Ссылка для подтверждения отправлена на {0}. Перейдите по ней для активации аккаунта.</entry>
+  <entry key="resend_verification_btn">Отправить снова</entry>
+  <entry key="resend_verification_link">Отправить ссылку активации повторно</entry>
+  <entry key="account_verified_success">Аккаунт успешно подтверждён! Добро пожаловать!</entry>
   <entry key="forgot_title">Восстановление пароля</entry>
   <entry key="forgot_desc">Введите вашу электронную почту. Вы получите ссылку для сброса пароля.</entry>
   <entry key="forgot_btn">Отправить ссылку</entry>

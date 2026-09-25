@@ -1,5 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const router = express.Router();
@@ -30,11 +32,51 @@ const forgotPasswordLimiter = rateLimit({
   message: { error: 'Trop de demandes de réinitialisation. Veuillez réessayer dans une heure.' },
 });
 
+// Rate limiter pour le renvoi d'e-mail de confirmation
+const resendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 demandes max par IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de demandes de renvoi. Veuillez réessayer dans 15 minutes.' },
+});
+
 // Validation d'adresse e-mail
 function isValidEmail(email) {
   return typeof email === 'string' &&
     email.length <= 100 &&
     /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+}
+
+// Helper d'envoi d'e-mail avec fallback de développement si SMTP non configuré
+async function sendEmail({ to, subject, html, text }) {
+  const hasSmtp = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+  if (!hasSmtp) {
+    console.log('----------------------------------------------------');
+    console.log(`📧 [DEV - Aucun SMTP configuré dans .env]`);
+    console.log(`Destinataire : ${to}`);
+    console.log(`Sujet        : ${subject}`);
+    if (text) console.log(`Lien / Info  : ${text}`);
+    console.log('----------------------------------------------------');
+    return { dev: true };
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"ToDoList" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    text,
+    html,
+  });
+  return { dev: false };
 }
 
 // Middleware pour vérifier le JWT (Supporte Cookie HttpOnly ET Header Authorization Bearer)
@@ -60,10 +102,17 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// POST /api/auth/register
+// POST /api/auth/register (avec piège Honeypot anti-bots & envoi de vérification)
 router.post('/register', authLimiter, async (req, res) => {
   try {
-    const { name, email, password, termsAccepted } = req.body;
+    const { name, email, password, termsAccepted, website_hp } = req.body;
+
+    // Piège à robots : si le champ invisible est rempli, c'est un bot automatisé
+    if (website_hp) {
+      console.warn(`🤖 Inscription robot bloquée via honeypot pour l'adresse: ${email}`);
+      return res.status(400).json({ error: 'Inscription rejetée' });
+    }
+
     if (!termsAccepted || (termsAccepted !== true && termsAccepted !== 'true')) {
       return res.status(400).json({ error: "Vous devez accepter les Conditions d'Utilisation et la Politique de Confidentialité" });
     }
@@ -89,17 +138,137 @@ router.post('/register', authLimiter, async (req, res) => {
       return res.status(409).json({ error: 'Cet e-mail est déjà utilisé' });
     }
 
+    // Jeton d'activation valable 24h
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     const user = new User({
       name: name.trim(),
       email: cleanEmail,
       passwordHash: password,
       termsAcceptedAt: new Date(),
+      isVerified: false,
+      verificationToken,
+      verificationTokenExpiry,
     });
     await user.save();
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-    res.cookie('token', token, COOKIE_OPTIONS);
-    res.status(201).json({ token, user });
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const verifyLink = `${appUrl}/?verify_token=${verificationToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: '✉️ Activez votre compte ToDoList',
+      text: `Lien d'activation : ${verifyLink}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:2rem;background:#f9f9f9;border-radius:12px;">
+          <h2 style="color:#6C5CE7;">Bienvenue sur ToDoList !</h2>
+          <p>Bonjour <strong>${user.name}</strong>,</p>
+          <p>Merci pour votre inscription ! Pour activer votre compte et sécuriser vos accès, veuillez cliquer sur le bouton ci-dessous :</p>
+          <a href="${verifyLink}" style="display:inline-block;margin:1.5rem 0;padding:0.8rem 1.8rem;background:#6C5CE7;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
+            Activer mon compte
+          </a>
+          <p style="color:#888;font-size:0.85rem;">Ce lien expire dans <strong>24 heures</strong>. Si vous n'avez pas demandé ce compte, ignorez ce message.</p>
+        </div>
+      `,
+    });
+
+    res.status(201).json({
+      message: 'Un e-mail de confirmation vous a été envoyé. Veuillez cliquer sur le lien pour activer votre compte.',
+      requiresVerification: true,
+      email: user.email,
+      devVerifyLink: !process.env.SMTP_USER ? verifyLink : undefined,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// POST /api/auth/verify-email/:token
+router.post('/verify-email/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'Token invalide' });
+    }
+
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpiry: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Lien de confirmation invalide ou expiré.' });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpiry = null;
+    await user.save();
+
+    // Connexion automatique après vérification
+    const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    res.cookie('token', jwtToken, COOKIE_OPTIONS);
+    res.json({ message: 'Compte validé avec succès !', token: jwtToken, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// POST /api/auth/resend-verification
+router.post('/resend-verification', resendLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'E-mail requis' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    if (!isValidEmail(cleanEmail)) {
+      return res.status(400).json({ error: 'Format d\'e-mail invalide' });
+    }
+
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      // Réponse générique pour éviter l'énumération
+      return res.json({ message: 'Si ce compte existe et n\'est pas encore validé, un lien a été envoyé.' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ error: 'Ce compte est déjà validé. Vous pouvez vous connecter.' });
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const verifyLink = `${appUrl}/?verify_token=${verificationToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: '✉️ Nouveau lien pour activer votre compte ToDoList',
+      text: `Lien d'activation : ${verifyLink}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:2rem;background:#f9f9f9;border-radius:12px;">
+          <h2 style="color:#6C5CE7;">Activation de votre compte ToDoList</h2>
+          <p>Bonjour <strong>${user.name}</strong>,</p>
+          <p>Vous avez demandé un nouveau lien d'activation :</p>
+          <a href="${verifyLink}" style="display:inline-block;margin:1.5rem 0;padding:0.8rem 1.8rem;background:#6C5CE7;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
+            Activer mon compte
+          </a>
+          <p style="color:#888;font-size:0.85rem;">Ce lien expire dans <strong>24 heures</strong>.</p>
+        </div>
+      `,
+    });
+
+    res.json({
+      message: 'Un nouveau lien de confirmation a été envoyé.',
+      devVerifyLink: !process.env.SMTP_USER ? verifyLink : undefined,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -121,6 +290,15 @@ router.post('/login', authLimiter, async (req, res) => {
     const user = await User.findOne({ email: cleanEmail });
     if (!user || !(await user.verifyPassword(password))) {
       return res.status(401).json({ error: 'Identifiants incorrects' });
+    }
+
+    // Blocage si l'adresse e-mail n'a pas encore été vérifiée
+    if (user.isVerified === false) {
+      return res.status(403).json({
+        error: 'Veuillez confirmer votre adresse e-mail avant de vous connecter.',
+        unverified: true,
+        email: user.email,
+      });
     }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -166,9 +344,6 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
     // Toujours répondre OK pour ne pas révéler si l'email existe (protection contre l'énumération)
     if (!user) return res.json({ message: 'Si cet e-mail existe, un lien a été envoyé.' });
 
-    const crypto = require('crypto');
-    const nodemailer = require('nodemailer');
-
     const token = crypto.randomBytes(32).toString('hex');
     user.resetToken = token;
     user.resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
@@ -177,18 +352,10 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
     const appUrl = process.env.APP_URL || 'http://localhost:3000';
     const resetLink = `${appUrl}/?reset_token=${token}`;
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"ToDoList" <${process.env.SMTP_USER}>`,
+    await sendEmail({
       to: user.email,
       subject: '🔑 Réinitialisation de votre mot de passe',
+      text: `Lien de réinitialisation : ${resetLink}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:2rem;background:#f9f9f9;border-radius:12px;">
           <h2 style="color:#6C5CE7;">Réinitialisation du mot de passe</h2>
@@ -203,7 +370,10 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
     });
 
     console.log(`📧 Email de reset envoyé à ${user.email}`);
-    res.json({ message: 'Un e-mail de réinitialisation a été envoyé.' });
+    res.json({
+      message: 'Un e-mail de réinitialisation a été envoyé.',
+      devResetLink: !process.env.SMTP_USER ? resetLink : undefined,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'e-mail. Vérifiez la configuration SMTP.' });

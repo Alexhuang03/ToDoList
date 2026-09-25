@@ -77,7 +77,15 @@ app.use((req, res) => {
 const server = http.createServer(app);
 initWebSocket(server);
 
-connectDB().then(() => {
+connectDB().then(async () => {
+  // Rétrocompatibilité : s'assurer que les utilisateurs existants restent vérifiés
+  try {
+    const User = require('./models/User');
+    await User.updateMany({ isVerified: { $exists: false } }, { $set: { isVerified: true } });
+  } catch (err) {
+    console.error('Erreur migration rétrocompatibilité isVerified:', err.message);
+  }
+
   server.listen(PORT, () => {
     console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
   });

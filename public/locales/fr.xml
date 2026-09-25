@@ -17,6 +17,12 @@
   <entry key="register_btn">Créer mon compte</entry>
   <entry key="has_account">Déjà un compte ?</entry>
   <entry key="show_login">Se connecter</entry>
+  <entry key="check_email_title">Vérifiez vos e-mails</entry>
+  <entry key="check_email_desc">Un lien de confirmation a été envoyé à votre adresse e-mail. Cliquez dessus pour activer votre compte.</entry>
+  <entry key="check_email_desc_user">Un lien de confirmation a été envoyé à {0}. Cliquez dessus pour activer votre compte.</entry>
+  <entry key="resend_verification_btn">Renvoyer l'e-mail</entry>
+  <entry key="resend_verification_link">Renvoyer le lien d'activation</entry>
+  <entry key="account_verified_success">Compte validé avec succès ! Bienvenue !</entry>
   <entry key="forgot_title">Mot de passe oublié</entry>
   <entry key="forgot_desc">Entrez votre adresse e-mail. Vous recevrez un lien pour réinitialiser votre mot de passe.</entry>
   <entry key="forgot_btn">Envoyer le lien</entry>

@@ -15,7 +15,12 @@ const API = {
       body: body ? JSON.stringify(body) : undefined
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || t('server_error'));
+    if (!res.ok) {
+      const err = new Error(data.error || t('server_error'));
+      err.data = data;
+      err.status = res.status;
+      throw err;
+    }
     return data;
   },
   get(path) { return this.req('GET', path); },
@@ -33,6 +38,7 @@ const expandedMissions = new Set();
 let applyWallpaper = null;
 let applyAccent = null;
 let currentLanguage = 'en';
+let pendingVerificationEmail = '';
 const LANGUAGES = {};
 
 async function loadLanguageXml(lang) {
@@ -307,10 +313,12 @@ function resetAuthScreen() {
   });
 }
 
-$('#show-register').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.remove('hidden'); });
-$('#show-login').addEventListener('click', e => { e.preventDefault(); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
-$('#show-forgot').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.remove('hidden'); $('#forgot-email').focus(); });
+$('#show-register').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); const vp = $('#verify-pending-form'); if (vp) vp.classList.add('hidden'); $('#register-form').classList.remove('hidden'); });
+$('#show-login').addEventListener('click', e => { e.preventDefault(); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); const vp = $('#verify-pending-form'); if (vp) vp.classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
+$('#show-forgot').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.add('hidden'); const vp = $('#verify-pending-form'); if (vp) vp.classList.add('hidden'); $('#forgot-form').classList.remove('hidden'); $('#forgot-email').focus(); });
 $('#forgot-back').addEventListener('click', e => { e.preventDefault(); $('#forgot-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
+const vBack = $('#verify-back-login');
+if (vBack) vBack.addEventListener('click', e => { e.preventDefault(); $('#verify-pending-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
 
 $('#auth-brand-link').addEventListener('click', () => { transitionTo('about-screen', 'left'); });
 $('#about-back-btn').addEventListener('click', () => { transitionTo('auth-screen', 'right'); });
@@ -401,6 +409,8 @@ $('#register-form').addEventListener('submit', async e => {
   const name = $('#register-name').value.trim();
   const email = $('#register-email').value.trim().toLowerCase();
   const password = $('#register-password').value;
+  const hpInput = $('#register-hp');
+  const website_hp = hpInput ? hpInput.value : '';
   const termsCheckbox = $('#register-terms');
   if (termsCheckbox && !termsCheckbox.checked) {
     $('#register-error').textContent = t('terms_required') || 'Veuillez accepter les Conditions d\'Utilisation et la Politique de Confidentialité.';
@@ -409,10 +419,27 @@ $('#register-form').addEventListener('submit', async e => {
   $('#register-error').textContent = '';
   setLoading('register-btn', true);
   try {
-    const data = await API.post('/auth/register', { name, email, password, termsAccepted: true });
-    localStorage.setItem('tdl_token', data.token);
-    currentUser = data.user;
-    enterApp();
+    const data = await API.post('/auth/register', { name, email, password, termsAccepted: true, website_hp });
+    if (data.requiresVerification) {
+      pendingVerificationEmail = email;
+      $('#register-form').classList.add('hidden');
+      $('#verify-pending-form').classList.remove('hidden');
+      const descTpl = t('check_email_desc_user');
+      $('#verify-pending-desc').textContent = descTpl ? descTpl.replace('{0}', email) : `Un lien de confirmation a été envoyé à ${email}. Veuillez cliquer dessus pour activer votre compte.`;
+      if (data.devVerifyLink) {
+        $('#dev-verify-banner').style.display = 'block';
+        $('#dev-verify-link').href = data.devVerifyLink;
+      } else {
+        $('#dev-verify-banner').style.display = 'none';
+      }
+      $('#register-name').value = '';
+      $('#register-password').value = '';
+      if (termsCheckbox) termsCheckbox.checked = false;
+    } else {
+      localStorage.setItem('tdl_token', data.token);
+      currentUser = data.user;
+      enterApp();
+    }
   } catch (err) {
     $('#register-error').textContent = t(err.message);
   } finally {
@@ -420,11 +447,48 @@ $('#register-form').addEventListener('submit', async e => {
   }
 });
 
+async function triggerResendVerification(email) {
+  if (!email) return;
+  try {
+    const res = await API.post('/auth/resend-verification', { email });
+    toast(t(res.message) || res.message);
+    if (res.devVerifyLink) {
+      $('#dev-verify-banner').style.display = 'block';
+      $('#dev-verify-link').href = res.devVerifyLink;
+      $('#login-form').classList.add('hidden');
+      $('#verify-pending-form').classList.remove('hidden');
+    }
+  } catch (err) {
+    toast(t('error_prefix') + t(err.message));
+  }
+}
+
+const resendBtn = $('#resend-verification-btn');
+if (resendBtn) {
+  resendBtn.addEventListener('click', async () => {
+    if (!pendingVerificationEmail) return;
+    setLoading('resend-verification-btn', true);
+    $('#verify-pending-msg').textContent = '';
+    try {
+      const res = await API.post('/auth/resend-verification', { email: pendingVerificationEmail });
+      toast(t(res.message) || res.message);
+      if (res.devVerifyLink) {
+        $('#dev-verify-banner').style.display = 'block';
+        $('#dev-verify-link').href = res.devVerifyLink;
+      }
+    } catch (err) {
+      $('#verify-pending-msg').textContent = t(err.message);
+    } finally {
+      setLoading('resend-verification-btn', false);
+    }
+  });
+}
+
 $('#login-form').addEventListener('submit', async e => {
   e.preventDefault();
   const email = $('#login-email').value.trim().toLowerCase();
   const password = $('#login-password').value;
-  $('#login-error').textContent = '';
+  $('#login-error').innerHTML = '';
   setLoading('login-btn', true);
   try {
     const data = await API.post('/auth/login', { email, password });
@@ -432,7 +496,20 @@ $('#login-form').addEventListener('submit', async e => {
     currentUser = data.user;
     enterApp();
   } catch (err) {
-    $('#login-error').textContent = t(err.message);
+    if (err.data && err.data.unverified) {
+      pendingVerificationEmail = email;
+      const resendLinkText = t('resend_verification_link') || 'Renvoyer le lien de confirmation';
+      $('#login-error').innerHTML = `${esc(t(err.message))} <br><a href="#" id="login-resend-link" style="color:var(--accent);text-decoration:underline;display:inline-block;margin-top:0.4rem;font-weight:600;">${esc(resendLinkText)}</a>`;
+      const resendEl = $('#login-resend-link');
+      if (resendEl) {
+        resendEl.addEventListener('click', async (evt) => {
+          evt.preventDefault();
+          await triggerResendVerification(email);
+        });
+      }
+    } else {
+      $('#login-error').textContent = t(err.message);
+    }
   } finally {
     setLoading('login-btn', false);
   }
@@ -553,6 +630,25 @@ $('#reset-form').addEventListener('submit', async e => {
 /* ===== AUTO-LOGIN ===== */
 (async function init() {
   await updateLanguage('en');
+
+  // Détection du token de vérification d'e-mail dans l'URL
+  const verifyToken = new URLSearchParams(window.location.search).get('verify_token');
+  if (verifyToken) {
+    showScreen('auth-screen');
+    window.history.replaceState({}, document.title, window.location.pathname);
+    try {
+      const data = await API.post('/auth/verify-email/' + verifyToken);
+      currentUser = data.user;
+      if (data.token) localStorage.setItem('tdl_token', data.token);
+      toast(t('account_verified_success') || 'Compte validé avec succès ! Bienvenue !');
+      await enterApp();
+      return;
+    } catch (err) {
+      $('#login-error').textContent = t(err.message) || err.message;
+      return;
+    }
+  }
+
   // Détection du token de réinitialisation dans l'URL
   const resetToken = new URLSearchParams(window.location.search).get('reset_token');
   if (resetToken) {

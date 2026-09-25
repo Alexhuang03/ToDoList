@@ -12,7 +12,16 @@ const userSchema = new mongoose.Schema({
   theme: { type: String, default: 'dark' },
   language: { type: String, default: 'en' },
   termsAcceptedAt: { type: Date, default: Date.now },
+  isVerified: { type: Boolean, default: false },
+  verificationToken: { type: String, default: null },
+  verificationTokenExpiry: { type: Date, default: null },
 }, { timestamps: true });
+
+// Auto-nettoyage : suppression automatique par MongoDB des comptes non vérifiés après 48h
+userSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 48 * 3600, partialFilterExpression: { isVerified: false } }
+);
 
 // Hash du mot de passe avant sauvegarde
 userSchema.pre('save', async function () {
@@ -25,12 +34,14 @@ userSchema.methods.verifyPassword = function (plain) {
   return bcrypt.compare(plain, this.passwordHash);
 };
 
-// Ne jamais exposer le hash ni les tokens de réinitialisation dans les réponses JSON
+// Ne jamais exposer le hash ni les tokens sensibles dans les réponses JSON
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.passwordHash;
   delete obj.resetToken;
   delete obj.resetTokenExpiry;
+  delete obj.verificationToken;
+  delete obj.verificationTokenExpiry;
   return obj;
 };
 

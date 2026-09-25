@@ -17,6 +17,12 @@
   <entry key="register_btn">创建我的账号</entry>
   <entry key="has_account">已有账号？</entry>
   <entry key="show_login">登录</entry>
+  <entry key="check_email_title">查收您的确认邮件</entry>
+  <entry key="check_email_desc">确认链接已发送至您的邮箱，请点击链接以激活您的账号。</entry>
+  <entry key="check_email_desc_user">确认链接已发送至 {0}，请点击链接以激活您的账号。</entry>
+  <entry key="resend_verification_btn">重新发送邮件</entry>
+  <entry key="resend_verification_link">重新发送激活链接</entry>
+  <entry key="account_verified_success">账号激活成功！欢迎使用！</entry>
   <entry key="forgot_title">忘记密码</entry>
   <entry key="forgot_desc">输入您的电子邮箱，您将收到重置密码的链接。</entry>
   <entry key="forgot_btn">发送重置链接</entry>
