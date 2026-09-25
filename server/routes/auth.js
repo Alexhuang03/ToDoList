@@ -83,13 +83,36 @@ async function sendEmail({ to, subject, html, text, code }) {
     return { dev: true };
   }
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  let transportOpts;
+  if (process.env.SMTP_HOST) {
+    transportOpts = {
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: Number(process.env.SMTP_PORT) === 465,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    };
+  } else {
+    let service = process.env.SMTP_SERVICE;
+    if (!service) {
+      if (process.env.SMTP_USER.includes('yahoo')) {
+        service = 'yahoo';
+      } else {
+        service = 'gmail';
+      }
+    }
+    transportOpts = {
+      service,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    };
+  }
+
+  const transporter = nodemailer.createTransport(transportOpts);
 
   await transporter.sendMail({
     from: `"ToDoList" <${process.env.SMTP_USER}>`,
@@ -203,7 +226,6 @@ router.post('/register', authLimiter, async (req, res) => {
           message: 'Un code de confirmation vous a été envoyé.',
           requiresVerification: true,
           email: exists.email,
-          devCode: !process.env.SMTP_USER ? code : undefined,
         });
       }
       return res.status(409).json({ error: 'Cet e-mail est déjà utilisé' });
@@ -229,7 +251,6 @@ router.post('/register', authLimiter, async (req, res) => {
       message: 'Un code de confirmation vous a été envoyé par e-mail.',
       requiresVerification: true,
       email: user.email,
-      devCode: !process.env.SMTP_USER ? code : undefined,
     });
   } catch (err) {
     console.error(err);
@@ -351,7 +372,6 @@ router.post('/resend-verification', resendLimiter, async (req, res) => {
     res.json({
       message: 'Un nouveau code de confirmation a été envoyé.',
       email: user.email,
-      devCode: !process.env.SMTP_USER ? code : undefined,
     });
   } catch (err) {
     console.error(err);

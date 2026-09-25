@@ -405,7 +405,7 @@ document.querySelectorAll('.legal-lang-btn').forEach(btn => {
 });
 
 /* ===== VERIFICATION OTP CODE HELPERS ===== */
-function showVerifyCodeForm(email, devCode) {
+function showVerifyCodeForm(email) {
   pendingVerificationEmail = email;
   document.querySelectorAll('#auth-screen .auth-form').forEach(f => f.classList.add('hidden'));
   const form = $('#verify-code-form');
@@ -417,15 +417,6 @@ function showVerifyCodeForm(email, devCode) {
     descEl.textContent = tpl ? tpl.replace('{0}', email) : `Entrez le code à 6 caractères envoyé à ${email}.`;
   }
 
-  const devBanner = $('#dev-verify-banner');
-  const devCodeVal = $('#dev-code-val');
-  if (devCode) {
-    if (devBanner) devBanner.style.display = 'block';
-    if (devCodeVal) devCodeVal.textContent = devCode;
-  } else {
-    if (devBanner) devBanner.style.display = 'none';
-  }
-
   const input = $('#verify-code-input');
   if (input) {
     input.value = '';
@@ -433,18 +424,6 @@ function showVerifyCodeForm(email, devCode) {
   }
   const msgEl = $('#verify-code-msg');
   if (msgEl) msgEl.textContent = '';
-}
-
-const devAutofillBtn = $('#dev-autofill-btn');
-if (devAutofillBtn) {
-  devAutofillBtn.addEventListener('click', e => {
-    e.preventDefault();
-    const val = $('#dev-code-val')?.textContent?.trim();
-    if (val && $('#verify-code-input')) {
-      $('#verify-code-input').value = val;
-      $('#verify-code-input').focus();
-    }
-  });
 }
 
 const verifyCodeForm = $('#verify-code-form');
@@ -517,10 +496,6 @@ if (resendCodeBtn) {
     try {
       const res = await API.post('/auth/resend-verification', { email: pendingVerificationEmail });
       toast(t(res.message) || res.message);
-      if (res.devCode) {
-        $('#dev-verify-banner').style.display = 'block';
-        $('#dev-code-val').textContent = res.devCode;
-      }
     } catch (err) {
       if (msgEl) msgEl.textContent = t(err.message) || err.message;
     }
@@ -557,7 +532,7 @@ $('#register-form').addEventListener('submit', async e => {
   try {
     const data = await API.post('/auth/register', { name, email, password, termsAccepted: true, website_hp });
     if (data.requiresVerification) {
-      showVerifyCodeForm(email, data.devCode);
+      showVerifyCodeForm(email);
       $('#register-name').value = '';
       $('#register-password').value = '';
       if (termsCheckbox) termsCheckbox.checked = false;
