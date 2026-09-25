@@ -313,12 +313,12 @@ function resetAuthScreen() {
   });
 }
 
-$('#show-register').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); const vp = $('#verify-pending-form'); if (vp) vp.classList.add('hidden'); $('#register-form').classList.remove('hidden'); });
-$('#show-login').addEventListener('click', e => { e.preventDefault(); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); const vp = $('#verify-pending-form'); if (vp) vp.classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
-$('#show-forgot').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.add('hidden'); const vp = $('#verify-pending-form'); if (vp) vp.classList.add('hidden'); $('#forgot-form').classList.remove('hidden'); $('#forgot-email').focus(); });
+$('#show-register').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); const vc = $('#verify-code-form'); if (vc) vc.classList.add('hidden'); $('#register-form').classList.remove('hidden'); });
+$('#show-login').addEventListener('click', e => { e.preventDefault(); $('#register-form').classList.add('hidden'); $('#forgot-form').classList.add('hidden'); const vc = $('#verify-code-form'); if (vc) vc.classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
+$('#show-forgot').addEventListener('click', e => { e.preventDefault(); $('#login-form').classList.add('hidden'); $('#register-form').classList.add('hidden'); const vc = $('#verify-code-form'); if (vc) vc.classList.add('hidden'); $('#forgot-form').classList.remove('hidden'); $('#forgot-email').focus(); });
 $('#forgot-back').addEventListener('click', e => { e.preventDefault(); $('#forgot-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
 const vBack = $('#verify-back-login');
-if (vBack) vBack.addEventListener('click', e => { e.preventDefault(); $('#verify-pending-form').classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
+if (vBack) vBack.addEventListener('click', e => { e.preventDefault(); $('#verify-code-form')?.classList.add('hidden'); $('#login-form').classList.remove('hidden'); });
 
 $('#auth-brand-link').addEventListener('click', () => { transitionTo('about-screen', 'left'); });
 $('#about-back-btn').addEventListener('click', () => { transitionTo('auth-screen', 'right'); });
@@ -404,6 +404,142 @@ document.querySelectorAll('.legal-lang-btn').forEach(btn => {
   });
 });
 
+/* ===== VERIFICATION OTP CODE HELPERS ===== */
+function showVerifyCodeForm(email, devCode) {
+  pendingVerificationEmail = email;
+  document.querySelectorAll('#auth-screen .auth-form').forEach(f => f.classList.add('hidden'));
+  const form = $('#verify-code-form');
+  if (form) form.classList.remove('hidden');
+
+  const descEl = $('#verify-code-desc');
+  if (descEl) {
+    const tpl = t('verify_code_desc');
+    descEl.textContent = tpl ? tpl.replace('{0}', email) : `Entrez le code à 6 caractères envoyé à ${email}.`;
+  }
+
+  const devBanner = $('#dev-verify-banner');
+  const devCodeVal = $('#dev-code-val');
+  if (devCode) {
+    if (devBanner) devBanner.style.display = 'block';
+    if (devCodeVal) devCodeVal.textContent = devCode;
+  } else {
+    if (devBanner) devBanner.style.display = 'none';
+  }
+
+  const input = $('#verify-code-input');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+  const msgEl = $('#verify-code-msg');
+  if (msgEl) msgEl.textContent = '';
+}
+
+const devAutofillBtn = $('#dev-autofill-btn');
+if (devAutofillBtn) {
+  devAutofillBtn.addEventListener('click', e => {
+    e.preventDefault();
+    const val = $('#dev-code-val')?.textContent?.trim();
+    if (val && $('#verify-code-input')) {
+      $('#verify-code-input').value = val;
+      $('#verify-code-input').focus();
+    }
+  });
+}
+
+const verifyCodeForm = $('#verify-code-form');
+if (verifyCodeForm) {
+  verifyCodeForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const code = ($('#verify-code-input')?.value || '').trim().toUpperCase();
+    const msgEl = $('#verify-code-msg');
+    if (msgEl) msgEl.textContent = '';
+
+    if (!code || code.length !== 6) {
+      if (msgEl) msgEl.textContent = t('invalid_code_format') || 'Veuillez saisir un code à 6 caractères.';
+      return;
+    }
+
+    setLoading('verify-code-submit-btn', true);
+    try {
+      const data = await API.post('/auth/verify-code', {
+        email: pendingVerificationEmail,
+        code,
+      });
+      localStorage.setItem('tdl_token', data.token);
+      currentUser = data.user;
+      toast(t('account_verified_success') || 'Compte validé avec succès ! Bienvenue !');
+      enterApp();
+    } catch (err) {
+      if (msgEl) msgEl.textContent = t(err.message) || err.message;
+    } finally {
+      setLoading('verify-code-submit-btn', false);
+    }
+  });
+}
+
+let _resendCooldown = 0;
+let _resendTimer = null;
+
+function startResendCooldown(seconds = 30) {
+  _resendCooldown = seconds;
+  const btn = $('#resend-code-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  btn.style.cursor = 'not-allowed';
+
+  if (_resendTimer) clearInterval(_resendTimer);
+  _resendTimer = setInterval(() => {
+    _resendCooldown--;
+    if (_resendCooldown <= 0) {
+      clearInterval(_resendTimer);
+      _resendTimer = null;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.textContent = t('resend_code_btn') || 'Renvoyer le code';
+    } else {
+      const tpl = t('resend_code_countdown') || 'Renvoyer ({0}s)';
+      btn.textContent = tpl.replace('{0}', _resendCooldown);
+    }
+  }, 1000);
+}
+
+const resendCodeBtn = $('#resend-code-btn');
+if (resendCodeBtn) {
+  resendCodeBtn.addEventListener('click', async () => {
+    if (!pendingVerificationEmail || _resendCooldown > 0) return;
+    const msgEl = $('#verify-code-msg');
+    if (msgEl) msgEl.textContent = '';
+    startResendCooldown(30);
+
+    try {
+      const res = await API.post('/auth/resend-verification', { email: pendingVerificationEmail });
+      toast(t(res.message) || res.message);
+      if (res.devCode) {
+        $('#dev-verify-banner').style.display = 'block';
+        $('#dev-code-val').textContent = res.devCode;
+      }
+    } catch (err) {
+      if (msgEl) msgEl.textContent = t(err.message) || err.message;
+    }
+  });
+}
+
+const changeEmailBtn = $('#verify-change-email');
+if (changeEmailBtn) {
+  changeEmailBtn.addEventListener('click', e => {
+    e.preventDefault();
+    $('#verify-code-form')?.classList.add('hidden');
+    $('#register-form')?.classList.remove('hidden');
+    if ($('#register-email')) {
+      $('#register-email').value = pendingVerificationEmail;
+      $('#register-email').focus();
+    }
+  });
+}
+
 $('#register-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('#register-name').value.trim();
@@ -421,17 +557,7 @@ $('#register-form').addEventListener('submit', async e => {
   try {
     const data = await API.post('/auth/register', { name, email, password, termsAccepted: true, website_hp });
     if (data.requiresVerification) {
-      pendingVerificationEmail = email;
-      $('#register-form').classList.add('hidden');
-      $('#verify-pending-form').classList.remove('hidden');
-      const descTpl = t('check_email_desc_user');
-      $('#verify-pending-desc').textContent = descTpl ? descTpl.replace('{0}', email) : `Un lien de confirmation a été envoyé à ${email}. Veuillez cliquer dessus pour activer votre compte.`;
-      if (data.devVerifyLink) {
-        $('#dev-verify-banner').style.display = 'block';
-        $('#dev-verify-link').href = data.devVerifyLink;
-      } else {
-        $('#dev-verify-banner').style.display = 'none';
-      }
+      showVerifyCodeForm(email, data.devCode);
       $('#register-name').value = '';
       $('#register-password').value = '';
       if (termsCheckbox) termsCheckbox.checked = false;
@@ -447,43 +573,6 @@ $('#register-form').addEventListener('submit', async e => {
   }
 });
 
-async function triggerResendVerification(email) {
-  if (!email) return;
-  try {
-    const res = await API.post('/auth/resend-verification', { email });
-    toast(t(res.message) || res.message);
-    if (res.devVerifyLink) {
-      $('#dev-verify-banner').style.display = 'block';
-      $('#dev-verify-link').href = res.devVerifyLink;
-      $('#login-form').classList.add('hidden');
-      $('#verify-pending-form').classList.remove('hidden');
-    }
-  } catch (err) {
-    toast(t('error_prefix') + t(err.message));
-  }
-}
-
-const resendBtn = $('#resend-verification-btn');
-if (resendBtn) {
-  resendBtn.addEventListener('click', async () => {
-    if (!pendingVerificationEmail) return;
-    setLoading('resend-verification-btn', true);
-    $('#verify-pending-msg').textContent = '';
-    try {
-      const res = await API.post('/auth/resend-verification', { email: pendingVerificationEmail });
-      toast(t(res.message) || res.message);
-      if (res.devVerifyLink) {
-        $('#dev-verify-banner').style.display = 'block';
-        $('#dev-verify-link').href = res.devVerifyLink;
-      }
-    } catch (err) {
-      $('#verify-pending-msg').textContent = t(err.message);
-    } finally {
-      setLoading('resend-verification-btn', false);
-    }
-  });
-}
-
 $('#login-form').addEventListener('submit', async e => {
   e.preventDefault();
   const email = $('#login-email').value.trim().toLowerCase();
@@ -497,16 +586,8 @@ $('#login-form').addEventListener('submit', async e => {
     enterApp();
   } catch (err) {
     if (err.data && err.data.unverified) {
-      pendingVerificationEmail = email;
-      const resendLinkText = t('resend_verification_link') || 'Renvoyer le lien de confirmation';
-      $('#login-error').innerHTML = `${esc(t(err.message))} <br><a href="#" id="login-resend-link" style="color:var(--accent);text-decoration:underline;display:inline-block;margin-top:0.4rem;font-weight:600;">${esc(resendLinkText)}</a>`;
-      const resendEl = $('#login-resend-link');
-      if (resendEl) {
-        resendEl.addEventListener('click', async (evt) => {
-          evt.preventDefault();
-          await triggerResendVerification(email);
-        });
-      }
+      showVerifyCodeForm(err.data.email || email);
+      toast(t(err.message) || err.message);
     } else {
       $('#login-error').textContent = t(err.message);
     }

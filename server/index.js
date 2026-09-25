@@ -33,7 +33,7 @@ app.use(helmet({
 }));
 
 // CORS avec restriction et support des credentials (cookies)
-const allowedOrigins = [process.env.APP_URL, `http://localhost:${PORT}`, 'http://127.0.0.1:3000'].filter(Boolean);
+const allowedOrigins = [process.env.APP_URL, `http://localhost:${PORT}`, 'http://127.0.0.1:3000', `http://127.0.0.1:${PORT}`].filter(Boolean);
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
