@@ -86,7 +86,23 @@ connectDB().then(async () => {
     console.error('Erreur migration rétrocompatibilité isVerified:', err.message);
   }
 
-  server.listen(PORT, () => {
-    console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
-  });
+  function startListen(p) {
+    const onError = (err) => {
+      if (err.code === 'EADDRINUSE') {
+        server.removeListener('error', onError);
+        console.warn(`⚠️ Port ${p} déjà utilisé, tentative sur le port ${p + 1}...`);
+        server.close(() => {
+          startListen(p + 1);
+        });
+      } else {
+        console.error('Erreur démarrage serveur:', err);
+      }
+    };
+    server.once('error', onError);
+    server.listen(p, () => {
+      server.removeListener('error', onError);
+      console.log(`🚀 Serveur démarré sur http://localhost:${p}`);
+    });
+  }
+  startListen(PORT);
 });

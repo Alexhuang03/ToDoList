@@ -178,4 +178,8 @@
   <entry key="mission_notes_empty">暂无备注。点击此处添加。</entry>
   <entry key="click_to_edit">点击进行修改</entry>
   <entry key="click_to_add">点击添加</entry>
+  <entry key="hide_completed">隐藏已完成任务</entry>
+  <entry key="show_completed">显示已完成任务</entry>
+  <entry key="all_completed_title">所有任务已完成！</entry>
+  <entry key="all_completed_desc">已完成的任务当前处于隐藏状态。</entry>
 </translations>

@@ -1395,6 +1395,82 @@ $('#back-btn').addEventListener('click', () => {
   transitionTo('home-screen', 'right');
 });
 
+/* ===== TOGGLE COMPLETED TASKS (EYE BUTTON) ===== */
+let hideCompletedTasks = localStorage.getItem('tdl_hide_completed') === 'true';
+
+function updateCompletedTasksVisibility() {
+  const fileScreen = $('#file-screen');
+  const btn = $('#toggle-completed-btn');
+  const allCompletedEmpty = $('#all-completed-empty');
+  if (!fileScreen || !btn) return;
+
+  const eyeOpen = btn.querySelector('.eye-open');
+  const eyeClosed = btn.querySelector('.eye-closed');
+
+  if (hideCompletedTasks) {
+    fileScreen.classList.add('hide-completed');
+    btn.classList.add('is-hiding');
+    if (eyeOpen) eyeOpen.classList.add('hidden');
+    if (eyeClosed) eyeClosed.classList.remove('hidden');
+    const titleText = t('show_completed');
+    btn.setAttribute('title', titleText);
+    btn.setAttribute('data-i18n-title', 'show_completed');
+  } else {
+    fileScreen.classList.remove('hide-completed');
+    btn.classList.remove('is-hiding');
+    if (eyeOpen) eyeOpen.classList.remove('hidden');
+    if (eyeClosed) eyeClosed.classList.add('hidden');
+    const titleText = t('hide_completed');
+    btn.setAttribute('title', titleText);
+    btn.setAttribute('data-i18n-title', 'hide_completed');
+  }
+
+  if (currentFile) {
+    const total = countTasks(currentFile);
+    const done = countDone(currentFile);
+    if (total === 0) {
+      btn.style.opacity = '0.35';
+      btn.style.pointerEvents = 'none';
+    } else {
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    }
+
+    if (allCompletedEmpty) {
+      if (hideCompletedTasks && total > 0 && done === total) {
+        allCompletedEmpty.classList.remove('hidden');
+      } else {
+        allCompletedEmpty.classList.add('hidden');
+      }
+    }
+  }
+}
+
+function toggleCompletedTasks(forceVal = null) {
+  if (typeof forceVal === 'boolean') {
+    hideCompletedTasks = forceVal;
+  } else {
+    hideCompletedTasks = !hideCompletedTasks;
+  }
+  localStorage.setItem('tdl_hide_completed', hideCompletedTasks);
+  updateCompletedTasksVisibility();
+
+  if (hideCompletedTasks && selectedMissionId) {
+    const found = findMissionById(selectedMissionId);
+    if (found && found.mission && found.mission.done) {
+      closeMissionNotes();
+    }
+  }
+}
+
+$('#toggle-completed-btn')?.addEventListener('click', () => {
+  toggleCompletedTasks();
+});
+
+$('#all-completed-reveal-btn')?.addEventListener('click', () => {
+  toggleCompletedTasks(false);
+});
+
 async function saveFile() {
   if (!currentFile) return;
   try {
@@ -2147,7 +2223,8 @@ function renderSections() {
         const displayName = isGen ? getGeneralSectionDisplay() : sec.name;
         const firstLetter = displayName.trim().charAt(0).toUpperCase() || '#';
         const secId = 'sec-' + sec.name.replace(/\s+/g, '-');
-        sidebarHtml += `<button class="category-index-item" data-target="${secId}" aria-label="${esc(displayName)}"><span class="category-index-letter">${esc(firstLetter)}</span><span class="category-index-tooltip"># ${esc(displayName)}</span></button>`;
+        const hasPending = sec.missions && sec.missions.some(m => !m.done);
+        sidebarHtml += `<button class="category-index-item${hasPending ? '' : ' all-done'}" data-target="${secId}" aria-label="${esc(displayName)}"><span class="category-index-letter">${esc(firstLetter)}</span><span class="category-index-tooltip"># ${esc(displayName)}</span></button>`;
       });
       sidebar.innerHTML = sidebarHtml;
       sidebar.querySelectorAll('.category-index-item').forEach(btn => {
@@ -2239,6 +2316,7 @@ function renderSections() {
     if (subList) subList.classList.add('open');
   });
   bindMissionEvents();
+  updateCompletedTasksVisibility();
 }
 
 function renderMission(m, secName) {

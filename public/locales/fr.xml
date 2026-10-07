@@ -178,4 +178,8 @@
   <entry key="mission_notes_empty">Aucune note. Cliquez ici pour en ajouter.</entry>
   <entry key="click_to_edit">Cliquer pour modifier</entry>
   <entry key="click_to_add">Cliquer pour ajouter</entry>
+  <entry key="hide_completed">Masquer les tâches effectuées</entry>
+  <entry key="show_completed">Afficher les tâches effectuées</entry>
+  <entry key="all_completed_title">Toutes les tâches sont terminées !</entry>
+  <entry key="all_completed_desc">Les tâches effectuées sont masquées.</entry>
 </translations>

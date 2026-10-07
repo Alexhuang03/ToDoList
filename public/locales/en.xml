@@ -178,4 +178,8 @@
   <entry key="mission_notes_empty">No notes. Click here to add notes.</entry>
   <entry key="click_to_edit">Click to edit</entry>
   <entry key="click_to_add">Click to add</entry>
+  <entry key="hide_completed">Hide completed tasks</entry>
+  <entry key="show_completed">Show completed tasks</entry>
+  <entry key="all_completed_title">All tasks completed!</entry>
+  <entry key="all_completed_desc">Completed tasks are currently hidden.</entry>
 </translations>

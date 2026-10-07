@@ -178,4 +178,8 @@
   <entry key="mission_notes_empty">Нет заметок. Нажмите здесь, чтобы добавить.</entry>
   <entry key="click_to_edit">Нажмите для изменения</entry>
   <entry key="click_to_add">Нажмите для добавления</entry>
+  <entry key="hide_completed">Скрыть выполненные задачи</entry>
+  <entry key="show_completed">Показать выполненные задачи</entry>
+  <entry key="all_completed_title">Все задачи выполнены!</entry>
+  <entry key="all_completed_desc">Выполненные задачи скрыты.</entry>
 </translations>

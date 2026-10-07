@@ -702,6 +702,102 @@ body.screen-transitioning { overflow: hidden; }
 }
 .progress-text { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; min-width: 32px; }
 
+/* ===== TOGGLE COMPLETED TASKS (EYE BUTTON) ===== */
+.toggle-completed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 8px);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .toggle-completed-btn {
+  color: #000000;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.toggle-completed-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.toggle-completed-btn.is-hiding {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+[data-theme="light"] .toggle-completed-btn.is-hiding {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.toggle-completed-btn .eye-icon {
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.toggle-completed-btn:active .eye-icon {
+  transform: scale(0.9);
+}
+
+/* ===== HIDE COMPLETED MISSIONS & SUBTASKS ===== */
+.hide-completed .mission-item.completed {
+  display: none !important;
+}
+
+.hide-completed .mission-item.completed + .subtasks-list {
+  display: none !important;
+}
+
+.hide-completed .subtask-item.completed {
+  display: none !important;
+}
+
+.hide-completed .subtasks-list:not(:has(.subtask-item:not(.completed))) {
+  display: none !important;
+}
+
+.hide-completed .assignee-group:not(:has(.mission-item:not(.completed))) {
+  display: none !important;
+}
+
+.hide-completed .section:not(:has(.mission-item:not(.completed))) {
+  display: none !important;
+}
+
+.hide-completed .category-index-item.all-done {
+  display: none !important;
+}
+
+/* ===== ALL COMPLETED EMPTY STATE ===== */
+.all-completed-empty {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 16px);
+  margin: 1.5rem auto;
+  max-width: 460px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.all-completed-empty h3 {
+  color: var(--text-primary);
+}
+
 /* ===== HOME SCREEN ===== */
 #home-screen.active { display: flex; flex-direction: column; }
 
