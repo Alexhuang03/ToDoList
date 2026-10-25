@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Un gestionnaire de tâches web minimaliste et collaboratif.",
   "author": "Alexhuang03",
-  "license": "MIT",
+  "license": "UNLICENSED",
+  "private": true,
   "keywords": [
     "todolist",
     "task-manager",
