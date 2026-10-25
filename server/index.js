@@ -17,6 +17,10 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Le site passe par Cloudflare Tunnel : on fait confiance à ce seul proxy
+// pour récupérer la vraie IP du visiteur (nécessaire pour les rate limiters).
+app.set('trust proxy', 1);
+
 // Sécurisation des en-têtes HTTP avec Helmet & CSP
 app.use(helmet({
   contentSecurityPolicy: {
